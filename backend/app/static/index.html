@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ResqNet AI — DVS Priority Queue Dashboard</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brandRed: '#ef4444',
+            brandAmber: '#f59e0b',
+            brandGreen: '#10b981',
+            darkBg: '#0b0f19',
+            cardBg: '#131b2e'
+          }
+        }
+      }
+    }
+  </script>
+  <!-- React & Babel -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @keyframes pulse-fast {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.05); }
+    }
+    .animate-pulse-fast {
+      animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    body {
+      background-color: #090d16;
+      color: #f3f4f6;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-[#090d16] text-gray-100 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function App() {
+      const [queueData, setQueueData] = useState(null);
+      const [loading, setLoading] = useState(true);
+      const [activeTab, setActiveTab] = useState('all');
+      const [newSosText, setNewSosText] = useState('');
+      const [submitting, setSubmitting] = useState(false);
+      const [selectedCase, setSelectedCase] = useState(null);
+      const [autoRefresh, setAutoRefresh] = useState(false);
+      const [notification, setNotification] = useState('');
+
+      const fetchQueue = async () => {
+        try {
+          const res = await fetch('/queue');
+          const data = await res.json();
+          if (data.status === 'success') {
+            setQueueData(data);
+          }
+        } catch (err) {
+          console.error("Error fetching queue:", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      useEffect(() => {
+        fetchQueue();
+      }, []);
+
+      useEffect(() => {
+        let interval;
+        if (autoRefresh) {
+          interval = setInterval(fetchQueue, 3000);
+        }
+        return () => clearInterval(interval);
+      }, [autoRefresh]);
+
+      const handleResetSeed = async () => {
+        setLoading(true);
+        try {
+          await fetch('/queue/seed', { method: 'POST' });
+          await fetchQueue();
+          showNotification('Queue reset to 9 mock cases');
+        } catch (err) {
+          alert('Failed to reset mock queue');
+        }
+      };
+
+      const handleSimulateIntake = async (e) => {
+        e.preventDefault();
+        if (!newSosText.trim()) return;
+        setSubmitting(true);
+        try {
+          const res = await fetch('/intake', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text_input: newSosText, language_hint: 'English' })
+          });
+          const data = await res.json();
+          if (res.ok && data.case) {
+            setNewSosText('');
+            await fetchQueue();
+            showNotification(`New SOS Intaked & assigned to ${data.case.tier}!`);
+          } else {
+            alert('Failed to process intake');
+          }
+        } catch (err) {
+          alert('Error connecting to intake service');
+        } finally {
+          setSubmitting(false);
+        }
+      };
+
+      const showNotification = (msg) => {
+        setNotification(msg);
+        setTimeout(() => setNotification(''), 4000);
+      };
+
+      if (loading && !queueData) {
+        return (
+          <div className="flex flex-col items-center justify-center min-h-screen text-gray-400">
+            <div className="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-lg font-medium">Connecting to ResqNet Control Room Engine...</p>
+          </div>
+        );
+      }
+
+      const tiers = queueData?.tiers || { 'Tier 1': [], 'Tier 2': [], 'Tier 3': [] };
+      const counts = queueData?.tier_counts || { 'Tier 1': 0, 'Tier 2': 0, 'Tier 3': 0 };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {/* Header */}
+          <header className="bg-[#0f172a] border-b border-gray-800 sticky top-0 z-30 shadow-xl">
+            <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/50 flex items-center justify-center text-red-500 font-bold text-xl">
+                  🚨
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-white tracking-wide flex items-center gap-2">
+                    ResqNet AI <span className="text-xs bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded-full font-mono uppercase">Control Room</span>
+                  </h1>
+                  <p className="text-xs text-gray-400">Module 2 — Demographic Vulnerability Priority Matrix (DVS)</p>
+                </div>
+              </div>
+
+              {/* Action Toolbar */}
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={fetchQueue}
+                  className="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm font-medium rounded-lg border border-gray-700 transition flex items-center gap-2"
+                >
+                  <span>🔄 Refresh</span>
+                </button>
+
+                <button 
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg border transition flex items-center gap-2 ${
+                    autoRefresh 
+                      ? 'bg-emerald-950/80 border-emerald-600 text-emerald-400 animate-pulse' 
+                      : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700'
+                  }`}
+                >
+                  <span>{autoRefresh ? '🟢 Live Auto-Poll On' : '⏸ Auto-Poll Off'}</span>
+                </button>
+
+                <button 
+                  onClick={handleResetSeed}
+                  className="px-3 py-1.5 bg-red-950/40 hover:bg-red-900/60 text-red-300 text-sm font-medium rounded-lg border border-red-800/60 transition"
+                >
+                  Reset Mock Cases
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* Toast Notification */}
+          {notification && (
+            <div className="bg-emerald-900/90 border-b border-emerald-500 text-emerald-100 px-4 py-2 text-center text-sm font-semibold tracking-wide animate-bounce">
+              ✅ {notification}
+            </div>
+          )}
+
+          {/* Main Content */}
+          <main className="max-w-7xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+            
+            {/* Top Metric Overview Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-[#111827] border border-gray-800 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Total Active SOS</p>
+                  <p className="text-3xl font-extrabold text-white mt-1">{queueData?.total_cases || 0}</p>
+                </div>
+                <div className="w-12 h-12 bg-blue-500/10 text-blue-400 rounded-xl flex items-center justify-center text-xl font-bold">
+                  📋
+                </div>
+              </div>
+
+              <div className="bg-[#111827] border border-red-900/50 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-red-400 font-semibold flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                    Tier 1 (Critical Red)
+                  </p>
+                  <p className="text-3xl font-extrabold text-red-400 mt-1">{counts['Tier 1']}</p>
+                </div>
+                <div className="w-12 h-12 bg-red-500/20 text-red-400 rounded-xl flex items-center justify-center text-xl font-bold">
+                  🆘
+                </div>
+              </div>
+
+              <div className="bg-[#111827] border border-amber-900/50 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-amber-400 font-semibold">Tier 2 (High Amber)</p>
+                  <p className="text-3xl font-extrabold text-amber-400 mt-1">{counts['Tier 2']}</p>
+                </div>
+                <div className="w-12 h-12 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center text-xl font-bold">
+                  ⚠️
+                </div>
+              </div>
+
+              <div className="bg-[#111827] border border-emerald-900/50 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-emerald-400 font-semibold">Tier 3 (Standard Green)</p>
+                  <p className="text-3xl font-extrabold text-emerald-400 mt-1">{counts['Tier 3']}</p>
+                </div>
+                <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center text-xl font-bold">
+                  ✅
+                </div>
+              </div>
+            </div>
+
+            {/* Quick SOS Intake Test Form */}
+            <div className="bg-[#111827] border border-gray-800 rounded-xl p-4">
+              <h2 className="text-sm font-bold text-gray-200 uppercase tracking-wider mb-2 flex items-center gap-2">
+                <span>⚡ Live SOS Intake Simulator</span>
+                <span className="text-xs font-normal text-gray-400">(Type a mock distress message to test auto DVS triage)</span>
+              </h2>
+              <form onSubmit={handleSimulateIntake} className="flex gap-2">
+                <input
+                  type="text"
+                  value={newSosText}
+                  onChange={(e) => setNewSosText(e.target.value)}
+                  placeholder="e.g., 'Pregnant mother trapped in high floodwater at Majuli near River bank, urgent help needed!'"
+                  className="flex-1 bg-[#0b0f19] border border-gray-700 rounded-lg px-4 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-red-500"
+                />
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white font-semibold text-sm px-5 py-2 rounded-lg transition shadow-lg shadow-red-900/30 flex items-center gap-2"
+                >
+                  {submitting ? 'Processing...' : 'Submit SOS'}
+                </button>
+              </form>
+            </div>
+
+            {/* Queue Filter Tabs */}
+            <div className="flex border-b border-gray-800 gap-2">
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`pb-3 px-4 font-semibold text-sm transition border-b-2 ${
+                  activeTab === 'all'
+                    ? 'border-red-500 text-red-400'
+                    : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                All Cases ({queueData?.total_cases})
+              </button>
+              <button
+                onClick={() => setActiveTab('Tier 1')}
+                className={`pb-3 px-4 font-semibold text-sm transition border-b-2 ${
+                  activeTab === 'Tier 1'
+                    ? 'border-red-500 text-red-400'
+                    : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                🔴 Tier 1 Red ({counts['Tier 1']})
+              </button>
+              <button
+                onClick={() => setActiveTab('Tier 2')}
+                className={`pb-3 px-4 font-semibold text-sm transition border-b-2 ${
+                  activeTab === 'Tier 2'
+                    ? 'border-amber-500 text-amber-400'
+                    : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                🟡 Tier 2 Amber ({counts['Tier 2']})
+              </button>
+              <button
+                onClick={() => setActiveTab('Tier 3')}
+                className={`pb-3 px-4 font-semibold text-sm transition border-b-2 ${
+                  activeTab === 'Tier 3'
+                    ? 'border-emerald-500 text-emerald-400'
+                    : 'border-transparent text-gray-400 hover:text-gray-200'
+                }`}
+              >
+                🟢 Tier 3 Green ({counts['Tier 3']})
+              </button>
+            </div>
+
+            {/* Color-Coded Tiers View */}
+            <div className="space-y-8">
+              {(activeTab === 'all' || activeTab === 'Tier 1') && (
+                <TierSection
+                  tierTitle="Tier 1 — Critical Red Priority"
+                  subtitle="Pregnant, Infant, or Acute Medical Emergencies — Immediate Rescue & Medical Transport Required"
+                  bgColor="bg-red-950/20"
+                  borderColor="border-red-900/60"
+                  badgeBg="bg-red-500/20 text-red-400 border-red-500/40"
+                  icon="🚨"
+                  cases={tiers['Tier 1']}
+                  onSelectCase={setSelectedCase}
+                />
+              )}
+
+              {(activeTab === 'all' || activeTab === 'Tier 2') && (
+                <TierSection
+                  tierTitle="Tier 2 — High Amber Priority"
+                  subtitle="Elderly, Disabled, Dialysis, or Injured Victims — Accelerated Evacuation Queue"
+                  bgColor="bg-amber-950/20"
+                  borderColor="border-amber-900/60"
+                  badgeBg="bg-amber-500/20 text-amber-400 border-amber-500/40"
+                  icon="⚠️"
+                  cases={tiers['Tier 2']}
+                  onSelectCase={setSelectedCase}
+                />
+              )}
+
+              {(activeTab === 'all' || activeTab === 'Tier 3') && (
+                <TierSection
+                  tierTitle="Tier 3 — Standard Green Priority"
+                  subtitle="Able-Bodied Adults / General Rescue & Embankment Monitoring"
+                  bgColor="bg-emerald-950/20"
+                  borderColor="border-emerald-900/60"
+                  badgeBg="bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                  icon="✅"
+                  cases={tiers['Tier 3']}
+                  onSelectCase={setSelectedCase}
+                />
+              )}
+            </div>
+
+          </main>
+
+          {/* Modal View for Case JSON */}
+          {selectedCase && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-[#111827] border border-gray-700 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl">
+                <div className="flex items-center justify-between border-b border-gray-800 pb-3">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <span>Case Inspection</span>
+                    <span className="font-mono text-xs text-gray-400">{selectedCase.case_id}</span>
+                  </h3>
+                  <button 
+                    onClick={() => setSelectedCase(null)}
+                    className="text-gray-400 hover:text-white text-xl font-bold px-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 uppercase font-semibold mb-1">Operator Summary</p>
+                  <p className="text-sm text-gray-200 bg-gray-900 p-3 rounded-lg border border-gray-800">{selectedCase.summary}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 uppercase font-semibold mb-1">Shared JSON Schema Object</p>
+                  <pre className="bg-[#090d16] p-4 rounded-lg border border-gray-800 text-xs text-emerald-400 font-mono overflow-x-auto max-h-60">
+                    {JSON.stringify(selectedCase, null, 2)}
+                  </pre>
+                </div>
+                <div className="flex justify-end">
+                  <button 
+                    onClick={() => setSelectedCase(null)}
+                    className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-200 text-sm font-semibold rounded-lg"
+                  >
+                    Close Inspection
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Footer */}
+          <footer className="border-t border-gray-800 bg-[#0b0f19] py-4 text-center text-xs text-gray-500">
+            ResqNet AI Disaster Coordination Engine — Assam Flood Relief MVP Module 2
+          </footer>
+        </div>
+      );
+    }
+
+    function TierSection({ tierTitle, subtitle, bgColor, borderColor, badgeBg, icon, cases, onSelectCase }) {
+      if (!cases || cases.length === 0) {
+        return (
+          <div className={`p-6 rounded-2xl border ${borderColor} ${bgColor} text-center text-gray-500`}>
+            <p className="text-base font-semibold text-gray-400 mb-1">{icon} {tierTitle}</p>
+            <p className="text-xs">No active cases in this tier.</p>
+          </div>
+        );
+      }
+
+      return (
+        <div className={`rounded-2xl border ${borderColor} ${bgColor} p-5 space-y-4 shadow-lg`}>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gray-800/80 pb-3">
+            <div>
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <span>{icon}</span>
+                <span>{tierTitle}</span>
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono border font-semibold ${badgeBg}`}>
+                  {cases.length} Case{cases.length > 1 ? 's' : ''}
+                </span>
+              </h2>
+              <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>
+            </div>
+            <div className="text-xs text-gray-400 font-mono">
+              Sorted by: Urgency Score (↓) & Timestamp (↑)
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {cases.map((c, idx) => (
+              <CaseCard key={c.case_id} caseData={c} rank={idx + 1} onSelectCase={onSelectCase} />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function CaseCard({ caseData, rank, onSelectCase }) {
+      const getUrgencyBadge = (score) => {
+        if (score >= 5) return 'bg-red-500 text-white font-extrabold shadow-red-500/50 animate-pulse-fast';
+        if (score === 4) return 'bg-orange-500 text-white font-bold';
+        if (score === 3) return 'bg-amber-500 text-white font-bold';
+        return 'bg-emerald-600 text-white font-semibold';
+      };
+
+      const formatTime = (isoStr) => {
+        try {
+          const date = new Date(isoStr);
+          return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        } catch {
+          return isoStr;
+        }
+      };
+
+      return (
+        <div className="bg-[#111827] border border-gray-800 hover:border-gray-700 rounded-xl p-4 transition shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start gap-3 flex-1">
+            <div className="w-8 h-8 rounded-lg bg-gray-800 border border-gray-700 flex items-center justify-center text-xs font-bold text-gray-300 font-mono">
+              #{rank}
+            </div>
+
+            <div className="space-y-1 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold text-white text-base">{caseData.gps_or_landmark}</span>
+                <span className="text-xs bg-gray-800 text-gray-300 border border-gray-700 px-2 py-0.5 rounded font-mono">
+                  👥 {caseData.victim_count} victim{caseData.victim_count > 1 ? 's' : ''}
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded shadow ${getUrgencyBadge(caseData.urgency_score)}`}>
+                  Urgency {caseData.urgency_score}/5
+                </span>
+                <span className="text-xs text-gray-400 font-mono ml-auto md:ml-0">
+                  🕒 {formatTime(caseData.timestamp)}
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-300 font-medium line-clamp-2 italic">
+                "{caseData.raw_transcript}"
+              </p>
+
+              {/* Badges for categories & vulnerabilities */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {caseData.emergency_categories?.map(cat => (
+                  <span key={cat} className="text-[10px] uppercase font-bold bg-blue-950/60 text-blue-300 border border-blue-800/60 px-2 py-0.5 rounded">
+                    ⚡ {cat.replace('_', ' ')}
+                  </span>
+                ))}
+                {caseData.vulnerability_flags?.map(flag => (
+                  <span key={flag} className="text-[10px] uppercase font-bold bg-red-950/80 text-red-300 border border-red-800/80 px-2 py-0.5 rounded animate-pulse">
+                    ⚠️ {flag}
+                  </span>
+                ))}
+                {caseData.tele_health_status !== 'not_needed' && (
+                  <span className="text-[10px] uppercase font-bold bg-purple-950/80 text-purple-300 border border-purple-800/80 px-2 py-0.5 rounded">
+                    📞 Tele-Health: {caseData.tele_health_status}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex md:flex-col items-center justify-end gap-2 border-t md:border-t-0 border-gray-800 pt-2 md:pt-0">
+            <button
+              onClick={() => onSelectCase(caseData)}
+              className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 px-3 py-1.5 rounded-lg transition font-medium w-full md:w-auto"
+            >
+              Inspect Case
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
