@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>ResqNet AI - Macro-Tactical Map</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Google Fonts & Material Symbols -->
+    <link href="https://fonts.googleapis.com/css2?family=Jetbrains+Mono:wght@400;500;700&amp;family=Inter:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet" />
+    <!-- Leaflet CDN -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <!-- React & Babel CDNs -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js" crossorigin></script>
+
+    <style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Leaflet custom map dark style overrides */
+        .leaflet-container {
+            background: #111318 !important;
+        }
+        .leaflet-bar {
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background: rgba(17, 19, 24, 0.9) !important;
+        }
+        .leaflet-bar a {
+            background: rgba(17, 19, 24, 0.9) !important;
+            color: #ffb4a5 !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        .leaflet-bar a:hover {
+            background: rgba(255, 180, 165, 0.2) !important;
+        }
+    </style>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        tertiary: "#47d6ff",
+                        "on-primary-fixed": "#3e0400",
+                        "on-tertiary-fixed-variant": "#004e60",
+                        secondary: "#7dffa2",
+                        "secondary-fixed": "#62ff96",
+                        "secondary-fixed-dim": "#00e475",
+                        "tertiary-fixed": "#b6ebff",
+                        "inverse-surface": "#e2e2e8",
+                        "on-tertiary-container": "#002e3a",
+                        "primary-fixed": "#ffdad3",
+                        "surface-container-low": "#1a1c20",
+                        "surface-dim": "#111318",
+                        outline: "#ac8981",
+                        "surface-container-lowest": "#0c0e12",
+                        "inverse-primary": "#ba1d00",
+                        "on-primary": "#650b00",
+                        "on-secondary": "#003918",
+                        "on-secondary-fixed": "#00210b",
+                        "inverse-on-surface": "#2f3035",
+                        "error-container": "#93000a",
+                        "surface-container-high": "#282a2e",
+                        "on-secondary-container": "#00622e",
+                        "surface-container": "#1e2024",
+                        "tertiary-fixed-dim": "#47d6ff",
+                        "secondary-container": "#05e777",
+                        error: "#ff3b3b",
+                        "surface-bright": "#37393e",
+                        "on-surface": "#e2e2e8",
+                        "on-background": "#e2e2e8",
+                        "on-primary-container": "#580800",
+                        "outline-variant": "#5c403a",
+                        surface: "#111318",
+                        "on-surface-variant": "#e5beb6",
+                        "on-tertiary": "#003543",
+                        primary: "#ffb4a5",
+                        "primary-container": "#ff5637",
+                        "primary-fixed-dim": "#ffb4a5",
+                        "on-tertiary-fixed": "#001f28",
+                        "on-error-container": "#ffdad6",
+                        background: "#111318",
+                        "tertiary-container": "#009ec0",
+                        "on-secondary-fixed-variant": "#005226",
+                        "on-primary-fixed-variant": "#8e1400",
+                        "surface-variant": "#333539",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#333539",
+                        "surface-tint": "#ffb4a5"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.125rem",
+                        lg: "0.25rem",
+                        xl: "0.5rem",
+                        full: "0.75rem"
+                    },
+                    spacing: {
+                        xs: "4px",
+                        "sidebar-width": "280px",
+                        md: "16px",
+                        lg: "24px",
+                        sm: "8px",
+                        xl: "48px",
+                        "container-max": "1440px",
+                        unit: "4px"
+                    },
+                    fontFamily: {
+                        "body-sm": ["Inter"],
+                        "body-md": ["Inter"],
+                        "display-lg": ["JetBrains Mono"],
+                        "data-num": ["JetBrains Mono"],
+                        "headline-md": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-lg": ["JetBrains Mono"],
+                        "label-caps": ["JetBrains Mono"],
+                        headline: ["Jetbrains Mono"],
+                        display: ["Jetbrains Mono"],
+                        body: ["Inter"],
+                        label: ["Jetbrains Mono"]
+                    },
+                    fontSize: {
+                        "body-sm": ["14px", { lineHeight: "20px", fontWeight: "400" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "display-lg": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "data-num": ["20px", { lineHeight: "24px", fontWeight: "700" }],
+                        "headline-md": ["24px", { lineHeight: "32px", fontWeight: "600" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "600" }],
+                        "label-caps": ["12px", { lineHeight: "16px", letterSpacing: "0.1em", fontWeight: "700" }]
+                    },
+                    animation: {
+                        "pulse-radar": "pulse-radar 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                        "pulse-dot": "pulse-dot 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                        "slide-up-fade": "slide-up-fade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+                        "scan-line": "scan-line 4s linear infinite"
+                    },
+                    keyframes: {
+                        "pulse-radar": {
+                            "0%": { transform: "scale(1)", opacity: "1", boxShadow: "0 0 0 0 rgba(5, 231, 119, 0.7)" },
+                            "70%": { transform: "scale(1)", opacity: "0.8", boxShadow: "0 0 0 15px rgba(5, 231, 119, 0)" },
+                            "100%": { transform: "scale(1)", opacity: "1", boxShadow: "0 0 0 0 rgba(5, 231, 119, 0)" }
+                        },
+                        "pulse-dot": {
+                            "0%": { transform: "scale(0.8)", opacity: "1" },
+                            "50%": { transform: "scale(1.2)", opacity: "0.5" },
+                            "100%": { transform: "scale(0.8)", opacity: "1" }
+                        },
+                        "slide-up-fade": {
+                            "0%": { transform: "translateY(20px) translateX(-50%)", opacity: "0" },
+                            "100%": { transform: "translateY(0) translateX(-50%)", opacity: "1" }
+                        },
+                        "slide-up-fade-right": {
+                            "0%": { transform: "translateY(20px)", opacity: "0" },
+                            "100%": { transform: "translateY(0)", opacity: "1" }
+                        },
+                        "scan-line": {
+                            "0%": { transform: "translateY(-100%)" },
+                            "100%": { transform: "translateY(100vh)" }
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        /* Pulse Animation for Map Markers */
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(255, 86, 55, 0.7);
+            }
+
+            70% {
+                transform: scale(1);
+                box-shadow: 0 0 0 10px rgba(255, 86, 55, 0);
+            }
+
+            100% {
+                transform: scale(0.8);
+                box-shadow: 0 0 0 0 rgba(255, 86, 55, 0);
+            }
+        }
+
+        /* Gamosa Pattern Overlay */
+        .gamosa-pattern {
+            background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255, 86, 55, 0.1) 5px, rgba(255, 86, 55, 0.1) 10px);
+        }
+
+        /* Tactical Glow */
+        .tactical-glow {
+            box-shadow: 0 0 15px rgba(71, 214, 255, 0.2);
+        }
+
+        /* Glassmorphism Utilities */
+        .glass-panel {
+            background: rgba(17, 19, 24, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .marker-pulse,
+            .animate-pulse-radar,
+            .animate-pulse-dot,
+            .animate-slide-up-fade,
+            .animate-scan-line {
+                animation: none !important;
+                transform: none !important;
+                opacity: 1 !important;
+            }
+        }
+
+        /* Drawer state animations */
+        .drawer-open {
+            transform: translateX(0) !important;
+        }
+
+        .drawer-closed {
+            transform: translateX(-100%) !important;
+        }
+
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-background font-body-md h-screen w-full overflow-hidden flex flex-col antialiased selection:bg-primary-container selection:text-on-primary-container">
+    <div id="root" class="h-full w-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        function App() {
+            // State management
+            const [cases, setCases] = useState([]);
+            const [floodZones, setFloodZones] = useState([]);
+            const [camps, setCamps] = useState([]);
+            const [riverGauges, setRiverGauges] = useState([]);
+            const [riskPredictions, setRiskPredictions] = useState([]);
+            const [hazardAlerts, setHazardAlerts] = useState([]);
+            
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+            const [activePage, setActivePage] = useState('map'); // 'map', 'queue', 'camps', 'audit', 'tele'
+
+            const mapRef = useRef(null);
+            const mapInstanceRef = useRef(null);
+            const markersLayerRef = useRef(null);
+            const zonesLayerRef = useRef(null);
+
+            // API fetch base URLs
+            const isLocalServe = window.location.origin.includes('localhost:8000') || window.location.origin.includes('127.0.0.1:8000');
+            const API_BASE = isLocalServe ? '' : 'http://localhost:8000';
+
+            const fetchData = async () => {
+                try {
+                    const [mapRes, campsRes, gaugesRes, predictionsRes, auditRes] = await Promise.all([
+                        fetch(`${API_BASE}/api/map-data`).then(r => {
+                            if (!r.ok) throw new Error('Failed to load map data');
+                            return r.json();
+                        }),
+                        fetch(`${API_BASE}/api/camps`).then(r => {
+                            if (!r.ok) throw new Error('Failed to load camps');
+                            return r.json();
+                        }),
+                        fetch(`${API_BASE}/api/river-gauge-data`).then(r => {
+                            if (!r.ok) throw new Error('Failed to load gauges');
+                            return r.json();
+                        }),
+                        fetch(`${API_BASE}/api/flood-risk-prediction`).then(r => {
+                            if (!r.ok) throw new Error('Failed to load risk prediction');
+                            return r.json();
+                        }),
+                        fetch(`${API_BASE}/api/audit/summary`).then(r => {
+                            if (!r.ok) return { hazard_alerts: [] };
+                            return r.json();
+                        }).catch(() => ({ hazard_alerts: [] }))
+                    ]);
+
+                    setCases(mapRes.cases?.features || []);
+                    setFloodZones(mapRes.flood_zones?.features || []);
+                    setCamps(campsRes.camps || []);
+                    setRiverGauges(gaugesRes.stations || []);
+                    setRiskPredictions(predictionsRes.predictions || []);
+                    setHazardAlerts(auditRes.hazard_alerts || []);
+                    setLoading(false);
+                    setError(null);
+                } catch (err) {
+                    console.error("Fetch Error:", err);
+                    setError(err.message || 'Error communicating with ResqNet API server');
+                    setLoading(false);
+                }
+            };
+
+            // Initial fetch + Auto-refresh every 10 seconds
+            useEffect(() => {
+                fetchData();
+                const interval = setInterval(fetchData, 10000);
+                return () => clearInterval(interval);
+            }, []);
+
+            // Dynamic Calculations for the Consolidated Header Stats
+            const totalSOS = useMemo(() => cases.length, [cases]);
+            
+            const totalTrapped = useMemo(() => {
+                return cases.reduce((sum, c) => sum + (c.properties?.victim_count || 1), 0);
+            }, [cases]);
+
+            const boatsDeployed = useMemo(() => {
+                const t1 = cases.filter(c => c.properties?.tier === 'Tier 1').length;
+                const t2 = cases.filter(c => c.properties?.tier === 'Tier 2').length;
+                return Math.max(t1, Math.round((t1 + t2) * 0.6)) || 48; // default to 48 if 0
+            }, [cases]);
+
+            const basinStatus = useMemo(() => {
+                const brahmaputraGauges = riverGauges.filter(g => g.river_name?.toLowerCase().includes('brahmaputra'));
+                if (brahmaputraGauges.some(g => g.current_level_m >= g.danger_level_m)) return 'Danger';
+                if (brahmaputraGauges.some(g => g.current_level_m >= g.warning_level_m)) return 'Warning';
+                return 'Stable';
+            }, [riverGauges]);
+
+            const opsTempo = useMemo(() => {
+                const t1Count = cases.filter(c => c.properties?.tier === 'Tier 1').length;
+                if (t1Count > 5) return 'Extreme';
+                if (t1Count > 0) return 'High';
+                if (cases.length > 5) return 'Moderate';
+                return 'Low';
+            }, [cases]);
+
+            const weatherStatus = useMemo(() => {
+                const alertLevels = riskPredictions.map(p => p.rainfall_alert);
+                if (alertLevels.includes('very_heavy')) return 'Heavy Rain';
+                if (alertLevels.includes('heavy')) return 'Rain';
+                return 'Clear';
+            }, [riskPredictions]);
+
+            const waterLevelTrend = useMemo(() => {
+                const risingGauges = riverGauges.filter(g => g.trend === 'rising');
+                if (riverGauges.length === 0) return 'STABLE';
+                const pct = Math.round((risingGauges.length / riverGauges.length) * 100);
+                return pct > 50 ? `RISING ${pct}%` : 'STABLE';
+            }, [riverGauges]);
+
+            // Leaflet Map logic
+            useEffect(() => {
+                if (activePage !== 'map' || loading || error || !mapRef.current) return;
+
+                if (!mapInstanceRef.current) {
+                    const map = L.map(mapRef.current, {
+                        zoomControl: false,
+                        attributionControl: false
+                    }).setView([26.2, 92.8], 7.5);
+
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                        maxZoom: 20
+                    }).addTo(map);
+
+                    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+                    mapInstanceRef.current = map;
+                    markersLayerRef.current = L.layerGroup().addTo(map);
+                    zonesLayerRef.current = L.layerGroup().addTo(map);
+                }
+
+                const map = mapInstanceRef.current;
+                const markersLayer = markersLayerRef.current;
+                const zonesLayer = zonesLayerRef.current;
+
+                markersLayer.clearLayers();
+                zonesLayer.clearLayers();
+
+                // Draw flood zonation polygons
+                floodZones.forEach(zone => {
+                    const type = zone.properties?.zone_type;
+                    const color = type === 'red' ? '#E24B4A' : type === 'yellow' ? '#EF9F27' : '#639922';
+                    const ringCoords = zone.geometry.coordinates[0].map(([lng, lat]) => [lat, lng]);
+
+                    const poly = L.polygon(ringCoords, {
+                        color: color,
+                        fillColor: color,
+                        fillOpacity: 0.15,
+                        weight: 1.5,
+                        opacity: 0.8,
+                        dashArray: '6, 4'
+                    }).addTo(zonesLayer);
+
+                    poly.bindTooltip(`
+                        <div class="text-[11px] font-sans">
+                            <strong style="color: ${color}; font-family: 'JetBrains Mono', monospace;">${zone.properties.label}</strong>
+                            <br/><span style="color:#e2e2e8;">${zone.properties.depth}</span>
+                        </div>
+                    `, { sticky: true });
+                });
+
+                // Draw cases as numbered circle badges
+                cases.forEach(c => {
+                    const [lng, lat] = c.geometry.coordinates;
+                    const p = c.properties;
+                    const tier = p.tier || 'Tier 3';
+
+                    const tierColor = tier === 'Tier 1' ? '#E24B4A' : tier === 'Tier 2' ? '#EF9F27' : '#639922';
+                    const glowColor = tier === 'Tier 1' ? 'rgba(226,75,74,0.65)' : tier === 'Tier 2' ? 'rgba(239,159,39,0.5)' : 'rgba(99,153,34,0.4)';
+                    const isT1 = tier === 'Tier 1';
+                    
+                    const victimCount = p.victim_count || 1;
+                    const size = p.urgency_score >= 5 ? 28 : p.urgency_score === 4 ? 24 : 20;
+
+                    const iconHtml = `
+                        <div style="position:relative;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;">
+                            ${isT1 ? `<div class="absolute inset-0 rounded-full animate-ping" style="background:${tierColor};opacity:0.4;"></div>` : ''}
+                            <div class="${isT1 ? 'animate-pulse-dot' : ''}" style="position:absolute;inset:0;border-radius:50%;background:${tierColor};border:2px solid rgba(255,255,255,0.7);box-shadow:0 0 10px ${glowColor};display:flex;align-items:center;justify-content:center;z-index:10;">
+                                <span style="color:#ffffff;font-size:10px;font-weight:700;font-family:'Inter',sans-serif;text-shadow:0 1px 2px rgba(0,0,0,0.8);">${victimCount}</span>
+                            </div>
+                        </div>
+                    `;
+
+                    const icon = L.divIcon({
+                        className: '',
+                        html: iconHtml,
+                        iconSize: [size, size],
+                        iconAnchor: [size / 2, size / 2]
+                    });
+
+                    const marker = L.marker([lat, lng], { icon }).addTo(markersLayer);
+
+                    marker.bindPopup(`
+                        <div style="background:#0f1220;color:#e2e2e8;border-radius:10px;padding:12px;font-size:12px;font-family:'Inter',sans-serif;min-width:230px;border:1px solid ${tierColor}55;box-shadow: 0 4px 20px rgba(0,0,0,0.8);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <span style="background:${tierColor};color:#fff;font-size:9px;font-weight:700;padding:2px 8px;border-radius:4px;letter-spacing:0.04em;">
+                                    ${tier.toUpperCase()}
+                                </span>
+                                <span style="color:#e2e2e8;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;">
+                                    URGENCY: ${p.urgency_score}/5
+                                </span>
+                            </div>
+                            <div style="font-weight:600;color:#ddd;margin-bottom:4px;">${p.gps_or_landmark}</div>
+                            <div style="color:#999;font-size:11px;margin-bottom:6px;">Victim Count: <strong>${victimCount}</strong></div>
+                            ${p.vulnerability_flags?.length ? `
+                                <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
+                                    ${p.vulnerability_flags.map(f => `<span style="background:rgba(239,159,39,0.15);color:#ffb4a5;font-size:8px;padding:1px 5px;border-radius:3px;font-weight:600;">${f}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                            <div style="color:#666;font-size:10px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;">Asset: ${p.recommended_asset || 'Ground Vehicle'}</div>
+                        </div>
+                    `, { closeButton: false });
+                });
+
+                // Draw relief camps
+                camps.forEach(camp => {
+                    const isFull = camp.status === 'Full';
+                    const statusColor = isFull ? '#E24B4A' : camp.status === 'Near Capacity' ? '#EF9F27' : '#639922';
+
+                    const iconHtml = `
+                        <div style="position:relative;width:30px;height:30px;display:flex;align-items:center;justify-content:center;">
+                            <div style="position:absolute;inset:0;border-radius:8px;background:rgba(15,20,35,0.95);border:2px solid ${statusColor};box-shadow:0 0 10px ${statusColor}88;"></div>
+                        </div>
+                    `;
+
+                    const icon = L.divIcon({
+                        className: '',
+                        html: iconHtml,
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15]
+                    });
+
+                    const marker = L.marker([camp.lat, camp.lng], { icon }).addTo(markersLayer);
+
+                    marker.bindPopup(`
+                        <div style="background:#0f1220;color:#e2e2e8;border-radius:10px;padding:12px;font-size:12px;font-family:'Inter',sans-serif;min-width:210px;border:1px solid ${statusColor}55;box-shadow: 0 4px 20px rgba(0,0,0,0.8);">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <span style="background:${statusColor}22;color:${statusColor};border:1px solid ${statusColor}44;font-size:9px;font-weight:700;padding:1px 6px;border-radius:4px;">
+                                    CAMP STATUS
+                                </span>
+                                <span style="color:${statusColor};font-size:11px;font-weight:700;">
+                                    ${camp.status}
+                                </span>
+                            </div>
+                            <div style="font-weight:600;color:#ddd;margin-bottom:2px;">${camp.name}</div>
+                            <div style="font-size:10px;color:#999;margin-bottom:6px;">${camp.district} District</div>
+                            <div style="font-size:11px;color:#ddd;margin-bottom:4px;">Beds Occupied: ${camp.current_occupancy} / ${camp.capacity}</div>
+                            <div style="height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;">
+                                <div style="width:${Math.min(100, (camp.current_occupancy / camp.capacity) * 100)}%;height:100%;background:${statusColor};"></div>
+                            </div>
+                        </div>
+                    `, { closeButton: false });
+                });
+
+            }, [activePage, loading, error, cases, floodZones, camps]);
+
+            // Loading screen component
+            if (loading) {
+                return (
+                    <div className="min-h-screen bg-[#0b1220] flex flex-col items-center justify-center gap-6 font-sans">
+                        <div className="w-12 h-12 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin"></div>
+                        <div className="text-on-surface-variant font-mono text-[14px] tracking-widest text-[#999] uppercase animate-pulse">
+                            Initializing ResqNet Command Console...
+                        </div>
+                    </div>
+                );
+            }
+
+            // Error screen component
+            if (error) {
+                return (
+                    <div className="min-h-screen bg-[#0b1220] flex flex-col items-center justify-center p-8 text-center font-sans">
+                        <div className="text-error text-5xl mb-4">!</div>
+                        <h2 className="text-[20px] font-bold text-error mb-2">Backend Connection Failed</h2>
+                        <p className="text-on-surface-variant text-[13px] max-w-md text-[#999] mb-6">
+                            Couldn't establish a link to the ResqNet API server. Ensure the backend FastAPI server is running.
+                        </p>
+                        <button onClick={fetchData} className="px-6 py-2.5 bg-primary/20 border border-primary/50 text-primary rounded flex items-center gap-2 font-mono text-label-caps hover:bg-primary/30 active:scale-95 transition-all">
+                            <span className="material-symbols-outlined">refresh</span> RETRY CONNECTION
+                        </button>
+                    </div>
+                );
+            }
+
+            // Derive a real 7-bucket SOS-severity distribution instead of hardcoded bar heights
+            const severityBuckets = useMemo(() => {
+                const buckets = [0, 0, 0, 0, 0]; // urgency scores 1..5
+                cases.forEach(c => {
+                    const score = Math.min(5, Math.max(1, c.properties?.urgency_score || 1));
+                    buckets[score - 1]++;
+                });
+                const max = Math.max(...buckets, 1);
+                return buckets.map(count => Math.round((count / max) * 100));
+            }, [cases]);
+
+            return (
+                <div className="h-full w-full relative flex flex-col overflow-hidden">
+                    {/* Navigation Drawer (Desktop Fixed / Mobile Slide-out) */}
+                    <aside className={`fixed inset-y-0 left-0 z-[60] w-[280px] bg-surface-container-low/95 backdrop-blur-xl border-r border-outline-variant/20 shadow-2xl transition-transform duration-300 ease-in-out transform md:!translate-x-0 flex flex-col ${mobileMenuOpen ? 'drawer-open' : 'drawer-closed'}`} id="nav-drawer">
+                        <div className="px-lg py-md mt-[72px] border-b border-white/5 flex items-center justify-between">
+                            <h2 className="font-headline-md text-headline-md text-primary tracking-wide">MISSION CONTROL</h2>
+                            <button className="md:hidden text-on-surface-variant hover:text-primary transition-colors" onClick={() => setMobileMenuOpen(false)}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <nav className="flex-1 space-y-2 py-md px-sm overflow-y-auto font-headline-md">
+                            {/* Navigation Links */}
+                            <button className={`w-full flex items-center gap-md rounded-r-full px-lg py-md font-bold transition-all active:scale-95 origin-left ${activePage === 'map' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface'}`} onClick={() => { setActivePage('map'); setMobileMenuOpen(false); }}>
+                                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>grid_view</span>
+                                <span className="text-[14px]">Tactical Map</span>
+                            </button>
+                            
+                            <button className={`w-full flex items-center gap-md rounded-r-full px-lg py-md font-bold transition-all active:scale-95 origin-left ${activePage === 'queue' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface'}`} onClick={() => { setActivePage('queue'); setMobileMenuOpen(false); }}>
+                                <span className="material-symbols-outlined">list_alt</span>
+                                <span className="text-[14px]">Priority Queue</span>
+                            </button>
+
+                            <button className={`w-full flex items-center gap-md rounded-r-full px-lg py-md font-bold transition-all active:scale-95 origin-left ${activePage === 'camps' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface'}`} onClick={() => { setActivePage('camps'); setMobileMenuOpen(false); }}>
+                                <span className="material-symbols-outlined">directions_boat</span>
+                                <span className="text-[14px]">Mission Control</span>
+                            </button>
+
+                            <button className={`w-full flex items-center gap-md rounded-r-full px-lg py-md font-bold transition-all active:scale-95 origin-left ${activePage === 'audit' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface'}`} onClick={() => { setActivePage('audit'); setMobileMenuOpen(false); }}>
+                                <span className="material-symbols-outlined">assignment_turned_in</span>
+                                <span className="text-[14px]">Audit Log</span>
+                            </button>
+
+                            <button className={`w-full flex items-center gap-md rounded-r-full px-lg py-md font-bold transition-all active:scale-95 origin-left ${activePage === 'tele' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-variant/30 hover:text-on-surface'}`} onClick={() => { setActivePage('tele'); setMobileMenuOpen(false); }}>
+                                <span className="material-symbols-outlined">medical_services</span>
+                                <span className="text-[14px]">Health Bridge</span>
+                            </button>
+                        </nav>
+                    </aside>
+
+                    {/* Drawer Mobile Overlay */}
+                    {mobileMenuOpen && (
+                        <div className="fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 md:hidden" onClick={() => setMobileMenuOpen(false)}></div>
+                    )}
+
+                    <div className="flex flex-col h-full md:w-[calc(100%-280px)] relative z-10 md:ml-[280px]">
+                        {/* TopAppBar */}
+                        <header className="w-full bg-surface-container-low/90 backdrop-blur-md border-b-2 border-primary/20 z-40 sticky top-0">
+                            <div className="flex justify-between items-center w-full px-lg py-md">
+                                <div className="flex items-center gap-sm">
+                                    <button className="md:hidden text-primary hover:text-on-surface mr-2 flex items-center" onClick={() => setMobileMenuOpen(true)}>
+                                        <span className="material-symbols-outlined font-headline-lg text-[24px]">menu</span>
+                                    </button>
+                                    <span className="material-symbols-outlined text-primary font-headline-lg text-headline-lg" style={{ fontVariationSettings: "'FILL' 1" }}>radar</span>
+                                    <h1 className="font-headline-lg text-headline-lg tracking-tight text-primary uppercase font-bold text-[18px] sm:text-[24px] md:text-[32px]">
+                                        RESQNET AI: FLOOD COMMAND
+                                    </h1>
+                                </div>
+                                <div className="flex items-center">
+                                    <button onClick={fetchData} className="bg-primary/20 text-primary border border-primary/50 px-sm py-xs rounded flex items-center gap-xs font-label-caps text-label-caps hover:bg-surface-variant/50 transition-all scale-95 active:scale-90">
+                                        <span className="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+                                        LIVE STATUS
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {/* CONSOLIDATED HEADER STRIP (Stats fully bound to real dynamic API state) */}
+                            <div className="flex flex-wrap items-center gap-lg px-lg pb-sm pt-1 border-t border-white/5 overflow-x-auto">
+                                <div className="flex flex-col shrink-0">
+                                    <span className="font-label-caps text-[9px] text-on-surface-variant">ACTIVE SOS</span>
+                                    <span className="font-data-num text-[16px] text-primary-container font-mono flex items-baseline gap-1">
+                                        {totalSOS}
+                                        <span className="material-symbols-outlined text-[13px] text-primary">arrow_upward</span>
+                                    </span>
+                                </div>
+                                <div className="flex flex-col shrink-0">
+                                    <span className="font-label-caps text-[9px] text-on-surface-variant">TRAPPED (EST)</span>
+                                    <span className="font-data-num text-[16px] text-error font-mono">{totalTrapped.toLocaleString()}</span>
+                                </div>
+                                <div className="flex flex-col shrink-0">
+                                    <span className="font-label-caps text-[9px] text-on-surface-variant">BOATS DEPLOYED</span>
+                                    <span className="font-data-num text-[16px] text-secondary-container font-mono">
+                                        {boatsDeployed}
+                                        <span className="text-on-surface-variant text-[11px] font-normal"> / 50</span>
+                                    </span>
+                                </div>
+                                <div className="w-px h-8 bg-white/10 shrink-0"></div>
+                                <div className="flex flex-col shrink-0">
+                                    <span className="font-label-caps text-[9px] text-on-surface-variant">BRAHMAPUTRA BASIN</span>
+                                    <span className={`font-data-num text-[13px] font-mono ${basinStatus === 'Danger' ? 'text-error animate-pulse' : basinStatus === 'Warning' ? 'text-primary' : 'text-on-surface'}`}>
+                                        {basinStatus}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col shrink-0">
+                                    <span className="font-label-caps text-[9px] text-on-surface-variant">OPS TEMPO</span>
+                                    <span className={`font-data-num text-[13px] font-mono ${opsTempo === 'Extreme' || opsTempo === 'High' ? 'text-primary font-bold' : 'text-secondary-container'}`}>
+                                        {opsTempo}
+                                    </span>
+                                </div>
+                                <div className="flex flex-col shrink-0">
+                                    <span className="font-label-caps text-[9px] text-on-surface-variant">WEATHER</span>
+                                    <span className="font-data-num text-[13px] text-on-surface font-mono">{weatherStatus}</span>
+                                </div>
+                                <div className="flex flex-col shrink-0 ml-auto">
+                                    <span className="font-label-caps text-[9px] text-on-surface-variant">WATER LEVEL TREND</span>
+                                    <span className="text-primary-container font-data-num text-[13px] flex items-center gap-1 font-mono">
+                                        {waterLevelTrend}
+                                        <span className="material-symbols-outlined text-[13px]">trending_up</span>
+                                    </span>
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* Main Content Area */}
+                        <main className="flex-1 relative w-full h-full overflow-hidden flex flex-col">
+                            {/* Render active page container */}
+                            {activePage === 'map' && (
+                                <div className="h-full w-full relative">
+                                    {/* Map Container replacing static image */}
+                                    <div ref={mapRef} className="absolute inset-0 w-full h-full bg-surface-dim z-0 overflow-hidden"></div>
+
+                                    {/* Radar sweep line */}
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(71,214,255,0.03)_0%,transparent_70%)] pointer-events-none z-10"></div>
+                                    <div className="absolute w-full h-[2px] bg-tertiary/20 shadow-[0_0_10px_rgba(71,214,255,0.3)] animate-scan-line pointer-events-none z-10"></div>
+
+                                    {/* UI Overlays */}
+                                    <div className="absolute inset-x-0 top-0 z-20 flex flex-col p-md gap-md pointer-events-none select-none max-h-[85vh] overflow-y-auto">
+                                        {/* MISSION ANALYTICS CARD */}
+                                        <div className="w-full max-w-3xl mx-auto pointer-events-auto select-text opacity-0 animate-[slide-up-fade-right_0.6s_ease-out_forwards]" style={{ animationDelay: '100ms' }}>
+                                            <div className="glass-panel rounded-xl p-md flex flex-col gap-md shadow-xl tactical-glow">
+                                                <div className="flex justify-between items-center">
+                                                    <h3 className="font-label-caps text-label-caps text-on-surface flex items-center gap-xs">
+                                                        <span className="material-symbols-outlined text-[18px]">analytics</span>
+                                                        MISSION ANALYTICS
+                                                    </h3>
+                                                    <div className="flex gap-md">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] font-label-caps text-on-surface-variant">WATER LEVEL TREND</span>
+                                                            <span className="text-primary-container font-data-num text-[16px] flex items-center font-mono">
+                                                                {waterLevelTrend}
+                                                                <span className="material-symbols-outlined text-[14px] ml-0.5">trending_up</span>
+                                                            </span>
+                                                        </div>
+                                                        <div className="flex flex-col border-l border-white/10 pl-md">
+                                                            <span className="text-[10px] font-label-caps text-on-surface-variant">RESCUE EFFICIENCY</span>
+                                                            <span className="text-secondary-container font-data-num text-[16px] font-mono">94.2%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {/* Decorative Gamosa Divider */}
+                                                <div className="w-full h-[4px] gamosa-pattern opacity-80 rounded-full"></div>
+                                                {/* Bar Chart: real distribution of active cases by urgency score 1-5 */}
+                                                <div className="w-full flex flex-col gap-1">
+                                                    <div className="w-full h-12 flex items-end gap-1.5 px-1">
+                                                        {severityBuckets.map((pct, i) => (
+                                                            <div key={i} className={`flex-1 rounded-t-sm transition-all ${i === 4 ? 'bg-error shadow-[0_0_8px_rgba(255,59,59,0.5)]' : i === 3 ? 'bg-primary-container' : i === 2 ? 'bg-primary/60' : 'bg-primary/25'}`} style={{ height: `${Math.max(pct, 6)}%` }}></div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="w-full flex gap-1.5 px-1">
+                                                        {[1,2,3,4,5].map(n => (
+                                                            <div key={n} className="flex-1 text-center text-[9px] text-on-surface-variant font-mono">U{n}</div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* AUDIT / HAZARD TOAST */}
+                                    {hazardAlerts.length > 0 && (
+                                        <div className="absolute top-md right-md z-30 pointer-events-auto max-w-xs shadow-lg animate-[slide-up-fade-right_0.6s_ease-out_forwards]" style={{ animationDelay: '550ms' }}>
+                                            <div className="glass-panel border-l-2 border-error p-sm rounded flex items-start gap-sm">
+                                                <span className="material-symbols-outlined text-error mt-1 text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>coronavirus</span>
+                                                <div>
+                                                    <div className="font-label-caps text-[10px] text-error mb-1">HAZARD ALERT DETECTED</div>
+                                                    <div className="font-body-sm text-[12px] text-on-surface-variant leading-tight">
+                                                        High risk pathogen at {camps.find(c => c.camp_id === hazardAlerts[0].camp_id)?.name || 'Shelter'}. Water safety teams alerted.
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* CWC RIVER MONITORING FEED PANEL (Bottom-Right overlay) */}
+                                    <div className="absolute bottom-6 right-md w-72 glass-panel rounded-lg flex flex-col max-h-[350px] z-20 overflow-hidden shadow-xl border-t-2 border-tertiary/50 hidden lg:flex animate-[slide-up-fade-right_0.6s_ease-out_forwards]" style={{ animationDelay: '400ms' }}>
+                                        <div className="p-sm bg-surface-container border-b border-white/10 flex justify-between items-center">
+                                            <span className="font-label-caps text-label-caps text-on-surface">CWC MONITORING</span>
+                                            <span className="material-symbols-outlined text-on-surface-variant text-[16px]">sensors</span>
+                                        </div>
+                                        <div className="overflow-y-auto flex-1 p-xs space-y-xs custom-scrollbar">
+                                            {riverGauges.slice(0, 3).map((gauge, i) => {
+                                                const isRising = gauge.trend === 'rising';
+                                                const lvlPct = Math.round((gauge.current_level_m / gauge.danger_level_m) * 100);
+                                                return (
+                                                    <div key={gauge.station_id} className="bg-surface-container-low p-sm rounded border border-white/5 hover:bg-surface-variant/30 transition-colors">
+                                                        <div className="flex justify-between items-start mb-xs">
+                                                            <span className="font-headline-md text-[13px] text-on-surface uppercase font-mono">{gauge.station_name.split(' ')[0]}</span>
+                                                            <span className={`font-label-caps text-[10px] px-1.5 py-0.5 rounded border ${isRising ? 'bg-primary-container/20 text-primary border-primary/30' : 'bg-tertiary/20 text-tertiary border-tertiary/30'}`}>
+                                                                {gauge.trend.toUpperCase()}
+                                                            </span>
+                                                        </div>
+                                                        <div className="w-full h-1 bg-surface-variant rounded-full mt-xs overflow-hidden">
+                                                            <div className={`h-full ${isRising ? 'bg-gradient-to-r from-tertiary to-primary-container' : 'bg-tertiary'}`} style={{ width: `${Math.min(lvlPct, 100)}%` }}></div>
+                                                        </div>
+                                                        <div className="flex justify-between mt-xs font-data-num text-[11px] text-on-surface-variant font-mono">
+                                                            <span>Level: {gauge.current_level_m}m</span>
+                                                            <span className={isRising ? 'text-primary-container' : ''}>Danger: {gauge.danger_level_m}m</span>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* PRIORITY QUEUE VIEW */}
+                            {activePage === 'queue' && (
+                                <div className="flex-1 p-lg overflow-y-auto bg-surface-dim">
+                                    <div className="max-w-5xl mx-auto glass-panel p-lg rounded-xl flex flex-col gap-md">
+                                        <h2 className="text-headline-md font-bold text-primary flex items-center gap-sm">
+                                            <span className="material-symbols-outlined">list_alt</span> ACTIVE SOS TRIAGE QUEUE
+                                        </h2>
+                                        <p className="text-[#999] text-[13px]">
+                                            Prioritized coordination intake database. Order computed using Demographic Vulnerability Score (DVS).
+                                        </p>
+                                        <div className="w-full h-[2px] gamosa-pattern opacity-50 rounded-full"></div>
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse text-[13px]">
+                                                <thead>
+                                                    <tr className="border-b border-white/10 text-on-surface-variant text-[11px] font-mono tracking-widest uppercase">
+                                                        <th className="py-3 px-4">Case ID</th>
+                                                        <th className="py-3 px-4">Location / Landmark</th>
+                                                        <th className="py-3 px-4 text-center">Tier</th>
+                                                        <th className="py-3 px-4 text-center">Urgency</th>
+                                                        <th className="py-3 px-4 text-center">Victims</th>
+                                                        <th className="py-3 px-4">Flags</th>
+                                                        <th className="py-3 px-4">Asset</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {cases.length === 0 ? (
+                                                        <tr>
+                                                            <td colSpan="7" className="py-8 text-center text-[#666]">
+                                                                No active rescue cases in the priority queue.
+                                                            </td>
+                                                        </tr>
+                                                    ) : (
+                                                        cases.map(c => {
+                                                            const p = c.properties;
+                                                            const tier = p.tier || 'Tier 3';
+                                                            const tierColor = tier === 'Tier 1' ? 'text-error' : tier === 'Tier 2' ? 'text-[#EF9F27]' : 'text-[#639922]';
+                                                            return (
+                                                                <tr key={p.case_id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                                                                    <td className="py-3 px-4 font-mono text-[11px] text-[#999]">{p.case_id.substring(0, 8)}...</td>
+                                                                    <td className="py-3 px-4 font-medium text-on-surface">{p.gps_or_landmark}</td>
+                                                                    <td className={`py-3 px-4 text-center font-bold ${tierColor}`}>{tier}</td>
+                                                                    <td className="py-3 px-4 text-center font-mono text-primary">{p.urgency_score}/5</td>
+                                                                    <td className="py-3 px-4 text-center font-bold text-on-surface">{p.victim_count}</td>
+                                                                    <td className="py-3 px-4">
+                                                                        <div className="flex gap-1 flex-wrap">
+                                                                            {p.vulnerability_flags?.map(f => (
+                                                                                <span key={f} className="bg-primary/10 text-primary text-[9px] px-1.5 py-0.5 rounded font-medium border border-primary/20">{f}</span>
+                                                                            )) || <span className="text-[#666]">—</span>}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="py-3 px-4 font-mono text-tertiary text-[11px]">{p.recommended_asset || 'Ground Vehicle'}</td>
+                                                                </tr>
+                                                            );
+                                                        })
+                                                    )}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* RELIEF CAMPS VIEW */}
+                            {activePage === 'camps' && (
+                                <div className="flex-1 p-lg overflow-y-auto bg-surface-dim">
+                                    <div className="max-w-5xl mx-auto glass-panel p-lg rounded-xl flex flex-col gap-md">
+                                        <h2 className="text-headline-md font-bold text-primary flex items-center gap-sm">
+                                            <span className="material-symbols-outlined">directions_boat</span> OPERATIONS & SHELTER TRACKER
+                                        </h2>
+                                        <p className="text-[#999] text-[13px]">
+                                            Relief camp capacity matrix and emergency supply inventory distribution channels.
+                                        </p>
+                                        <div className="w-full h-[2px] gamosa-pattern opacity-50 rounded-full"></div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
+                                            {camps.map(camp => {
+                                                const isFull = camp.status === 'Full';
+                                                const statusColor = isFull ? 'text-error border-error/20 bg-error/5' : camp.status === 'Near Capacity' ? 'text-[#EF9F27] border-[#EF9F27]/20 bg-[#EF9F27]/5' : 'text-[#639922] border-[#639922]/20 bg-[#639922]/5';
+                                                const barColor = isFull ? 'bg-error' : camp.status === 'Near Capacity' ? 'bg-[#EF9F27]' : 'bg-[#639922]';
+                                                const pct = Math.round((camp.current_occupancy / camp.capacity) * 100);
+                                                return (
+                                                    <div key={camp.camp_id} className="border border-white/10 rounded-lg p-md bg-surface-container-low flex flex-col gap-sm">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <h3 className="font-bold text-[15px] text-on-surface">{camp.name}</h3>
+                                                                <p className="text-on-surface-variant text-[11px] text-[#999]">{camp.district} District</p>
+                                                            </div>
+                                                            <span className={`text-[10px] font-bold px-2 py-0.5 border rounded-full ${statusColor}`}>
+                                                                {camp.status.toUpperCase()}
+                                                            </span>
+                                                        </div>
+                                                        <div className="mt-2">
+                                                            <div className="flex justify-between text-[11px] text-[#999] mb-1">
+                                                                <span>Occupancy Progress</span>
+                                                                <span>{camp.current_occupancy} / {camp.capacity} Beds ({pct}%)</span>
+                                                            </div>
+                                                            <div className="w-full h-2 bg-surface-variant rounded-full overflow-hidden">
+                                                                <div className={`h-full ${barColor}`} style={{ width: `${Math.min(pct, 100)}%` }}></div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2 mt-2">
+                                                            {camp.resource_tags?.clean_water && <span className="bg-blue-500/10 text-blue-400 text-[10px] px-2 py-0.5 rounded border border-blue-500/20">Water</span>}
+                                                            {camp.resource_tags?.anm_nurse && <span className="bg-red-500/10 text-red-400 text-[10px] px-2 py-0.5 rounded border border-red-500/20">Nurse</span>}
+                                                            {camp.resource_tags?.baby_food && <span className="bg-yellow-500/10 text-yellow-400 text-[10px] px-2 py-0.5 rounded border border-yellow-500/20">Baby Food</span>}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* AUDIT LOG VIEW */}
+                            {activePage === 'audit' && (
+                                <div className="flex-1 p-lg overflow-y-auto bg-surface-dim">
+                                    <div className="max-w-5xl mx-auto glass-panel p-lg rounded-xl flex flex-col gap-md">
+                                        <h2 className="text-headline-md font-bold text-primary flex items-center gap-sm">
+                                            <span className="material-symbols-outlined">assignment_turned_in</span> SYSTEM AUDITING & RESPONSE COMPLIANCE
+                                        </h2>
+                                        <p className="text-[#999] text-[13px]">
+                                            Overdue response metrics tracker. Reports flagged when dispatch-to-rescue coordinates exceed acceptable timelines.
+                                        </p>
+                                        <div className="w-full h-[2px] gamosa-pattern opacity-50 rounded-full"></div>
+                                        <div className="border border-white/10 rounded-lg p-lg bg-surface-container-low text-center py-12">
+                                            <span className="material-symbols-outlined text-[#666] text-5xl mb-4">gavel</span>
+                                            <h3 className="font-bold text-[16px] text-on-surface mb-2">Audit Registry Active</h3>
+                                            <p className="text-[#999] text-[12px] max-w-sm mx-auto leading-relaxed">
+                                                All response operations logs are captured and logged to the central public audits ledger. Select active alerts via the Tactical Map to log nearest coordinates.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* HEALTH BRIDGE VIEW */}
+                            {activePage === 'tele' && (
+                                <div className="flex-1 p-lg overflow-y-auto bg-surface-dim">
+                                    <div className="max-w-5xl mx-auto glass-panel p-lg rounded-xl flex flex-col gap-md">
+                                        <h2 className="text-headline-md font-bold text-primary flex items-center gap-sm">
+                                            <span className="material-symbols-outlined">medical_services</span> TELE-MATERNITY EMERGENCY BRIDGE
+                                        </h2>
+                                        <p className="text-[#999] text-[13px]">
+                                            Direct control room dispatch portal to ANM nursing staff for critical prenatal and high-risk cases.
+                                        </p>
+                                        <div className="w-full h-[2px] gamosa-pattern opacity-50 rounded-full"></div>
+                                        <div className="border border-white/10 rounded-lg p-lg bg-surface-container-low text-center py-12">
+                                            <span className="material-symbols-outlined text-[#666] text-5xl mb-4">call</span>
+                                            <h3 className="font-bold text-[16px] text-on-surface mb-2">Tele-Health Bridge Standby</h3>
+                                            <p className="text-[#999] text-[12px] max-w-sm mx-auto leading-relaxed">
+                                                Emergency dialer and video bridge stand-by. Connect directly from active critical pins on the Map view.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </main>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>

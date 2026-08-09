@@ -17,10 +17,9 @@ import {
 import L from 'leaflet'
 import 'leaflet.heat'
 import { motion, AnimatePresence } from 'framer-motion'
-import { showToast } from './utils/toast'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // set VITE_API_BASE_URL when deployed; empty string uses the Vite dev proxy → localhost:8000
+const API_BASE = ''  // Vite proxy → localhost:8000
 
 const TIER = {
   'Tier 1': { color: '#E24B4A', glow: 'rgba(226,75,74,0.55)',  label: 'T1 · Critical' },
@@ -52,6 +51,20 @@ const ASSAM_BOUNDING_MASK = [
     [24.0, 90.0],
   ],
 ]
+
+// Desktop Panel Slide Animation
+const desktopPanelVariants = {
+  hidden:  { x: '110%', opacity: 0 },
+  visible: { x: 0, opacity: 1, transition: { type: 'spring', stiffness: 320, damping: 32 } },
+  exit:    { x: '110%', opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } },
+}
+
+// Mobile Bottom Sheet Animation
+const mobileDrawerVariants = {
+  hidden:  { y: '100%', opacity: 0 },
+  visible: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 340, damping: 32 } },
+  exit:    { y: '100%', opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } },
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -394,8 +407,7 @@ function QueuePanel({ queue, filter, onFindNearestCamp, overdueCases }) {
                 {f ? 'No matches' : '—'}
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10 }}>
-              {cases.map(c => {
+              cases.map(c => {
                 const ov = overdueMap[c.case_id]
                 const isOverdue = Boolean(ov)
                 const mergedCount = c.merged_count ?? 1
@@ -438,7 +450,7 @@ function QueuePanel({ queue, filter, onFindNearestCamp, overdueCases }) {
 
                       {mergedCount > 1 && (
                         <span style={{
-                          background: 'rgba(255,180,165,0.1)', border: '1px solid rgba(255,180,165,0.3)',
+                          background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.3)',
                           color: 'var(--cyan)', fontSize: 9, fontWeight: 700, padding: '1px 6px',
                           borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 3,
                         }}>
@@ -471,8 +483,7 @@ function QueuePanel({ queue, filter, onFindNearestCamp, overdueCases }) {
                     </button>
                   </div>
                 )
-              })}
-              </div>
+              })
             )}
           </div>
         )
@@ -498,7 +509,7 @@ function InsightsPanel({ cases, onLocateCase }) {
     <>
       <PanelHeader icon="🔥" title="Worst-Hit Locations" subtitle="Synthesized high-impact priority targets" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {worstHit.map((item, idx) => {
           const p = item.properties
           const tier = p.tier
@@ -687,7 +698,7 @@ function CampsPanel({ camps, queue, onFindRouteForCase, selectedRoute, onClearRo
           No camps match the selected resource filter.
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {filteredCamps.map(camp => {
             const hasHazard = hazardCampIds.has(camp.camp_id)
             const statusColor = camp.status === 'Full' ? '#E24B4A' : camp.status === 'Near Capacity' ? '#EF9F27' : '#639922'
@@ -775,7 +786,7 @@ function ReunificationPanel({ reports, onReportSubmitted, onResolveReport }) {
       setLocation('')
       onReportSubmitted?.()
     } catch (err) {
-      showToast(`Couldn't submit report: ${err.message}`, 'error')
+      alert(`Error submitting report: ${err.message}`)
     } finally {
       setSubmitting(false)
     }
@@ -794,8 +805,7 @@ function ReunificationPanel({ reports, onReportSubmitted, onResolveReport }) {
       {/* Report Form */}
       <form onSubmit={handleSubmit} style={{
         background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 9, padding: '14px 16px', marginBottom: 18, display: 'flex', flexDirection: 'column', gap: 10,
-        maxWidth: 520,
+        borderRadius: 9, padding: '10px 12px', marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 8,
       }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.05em' }}>
           📝 SUBMIT MISSING PERSON REPORT
@@ -841,7 +851,7 @@ function ReunificationPanel({ reports, onReportSubmitted, onResolveReport }) {
         REGISTRY REPORTS ({reports?.length ?? 0})
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {(reports ?? []).map(rep => {
           const isMatch = rep.status === 'Possible Match'
           const isReunited = rep.status === 'Reunited'
@@ -950,7 +960,7 @@ function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToa
         CWC RIVER MONITORING STATIONS ({riverGauges?.length ?? 0})
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12, marginBottom: 24 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
         {(riverGauges ?? []).map(g => {
           const isDanger = g.current_level_m >= g.danger_level_m
           const isWarning = g.current_level_m >= g.warning_level_m
@@ -1007,7 +1017,7 @@ function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToa
         PREDICTED INUNDATION RISK MODEL
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {(predictions ?? []).map(p => {
           const color = RISK_COLOR[p.predicted_flood_risk] ?? '#639922'
           const isCritical = p.predicted_flood_risk === 'critical'
@@ -1062,74 +1072,19 @@ function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToa
   )
 }
 
-function SidebarGroupLabel({ children }) {
-  return (
-    <div style={{
-      padding: '14px 20px 6px', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.1em',
-      color: 'var(--text-muted)', textTransform: 'uppercase', fontFamily: "'JetBrains Mono',monospace",
-    }}>
-      {children}
-    </div>
-  )
-}
-
-function SidebarRow({ active, onClick, children }) {
-  return (
-    <motion.button
-      onClick={onClick}
-      whileHover={{ x: 2 }} whileTap={{ scale: 0.98 }}
-      style={{
-        display: 'flex', alignItems: 'center', gap: 10,
-        width: '100%', textAlign: 'left',
-        padding: '9px 16px 9px 18px', margin: '0 8px', marginBottom: 2,
-        borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-        fontSize: 12.5, fontWeight: 600,
-        border: 'none', borderLeft: active ? '3px solid #ffb4a5' : '3px solid transparent',
-        background: active ? 'rgba(255,180,165,0.10)' : 'transparent',
-        color: active ? '#ffb4a5' : '#a89890',
-        outline: 'none', transition: 'background 0.15s ease, color 0.15s ease',
-      }}
-      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#e2e2e8' } }}
-      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#a89890' } }}
-    >
-      {children}
-    </motion.button>
-  )
-}
-
 function PanelHeader({ icon, title, subtitle }) {
   return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 22 }}>{icon}</span>
-        <span style={{
-          color: 'var(--cyan)', fontWeight: 700, fontSize: 20,
-          fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.01em',
-        }}>
-          {title}
-        </span>
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ fontSize: 16 }}>{icon}</span>
+        <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14 }}>{title}</span>
       </div>
       {subtitle && (
-        <div style={{ color: 'var(--text-secondary)', fontSize: 12.5, marginTop: 6, paddingLeft: 32 }}>
+        <div style={{ color: '#64748b', fontSize: 11, marginTop: 4, paddingLeft: 24 }}>
           {subtitle}
         </div>
       )}
-      <div className="gamosa-pattern" style={{ height: 2, opacity: 0.6, borderRadius: 2, marginTop: 14 }} />
-    </div>
-  )
-}
-
-// ── Full-page shell: wraps a panel's content in a centered, spacious card ──
-// This is what replaces the old cramped 278px docked sidebar panel — every
-// section (Queue, Camps, Insights, Reunification, Early Warning) now takes
-// over the whole content area like a dedicated page, matching the reference
-// "MISSION CONTROL" layout instead of floating over the map.
-function FullPageShell({ children }) {
-  return (
-    <div style={{ maxWidth: 1180, margin: '0 auto', width: '100%' }}>
-      <div className="glass-panel" style={{ padding: '28px 32px', borderRadius: 16 }}>
-        {children}
-      </div>
+      <div style={{ height: 1, background: 'linear-gradient(90deg, rgba(255,255,255,0.1) 0%, transparent 100%)', marginTop: 12 }} />
     </div>
   )
 }
@@ -1137,24 +1092,24 @@ function FullPageShell({ children }) {
 function btnStyle(active = false, accent = false) {
   return {
     background: active
-      ? 'rgba(255, 180, 165, 0.12)'
-      : accent ? 'rgba(255, 180, 165, 0.06)' : 'rgba(15, 23, 42, 0.7)',
+      ? 'rgba(0, 229, 255, 0.12)'
+      : accent ? 'rgba(0, 229, 255, 0.06)' : 'rgba(15, 23, 42, 0.7)',
     backdropFilter: 'blur(10px)',
-    color: active ? '#ffb4a5' : accent ? '#ffcfc4' : '#ccd6e0',
+    color: active ? '#00E5FF' : accent ? '#7dd3fc' : '#ccd6e0',
     border: active
-      ? '1px solid rgba(255, 180, 165, 0.5)'
-      : accent ? '1px solid rgba(255, 180, 165, 0.2)' : '1px solid rgba(255, 180, 165, 0.08)',
+      ? '1px solid rgba(0, 229, 255, 0.5)'
+      : accent ? '1px solid rgba(0, 229, 255, 0.2)' : '1px solid rgba(0, 229, 255, 0.08)',
     borderRadius: 9,
     padding: '8px 14px',
     cursor: 'pointer',
     fontSize: 12,
     fontWeight: 500,
-    fontFamily: "'Inter', sans-serif",
+    fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
     display: 'flex', alignItems: 'center', gap: 8,
     textAlign: 'left',
     transition: 'background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s',
     minHeight: 38,
-    boxShadow: active ? '0 0 14px rgba(255,180,165,0.3)' : 'none',
+    boxShadow: active ? '0 0 14px rgba(0,229,255,0.3)' : 'none',
   }
 }
 
@@ -1284,7 +1239,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       fetchAll()
     } catch (e) {
-      showToast(`Couldn't resolve report: ${e.message}`, 'error')
+      alert(`Error resolving report: ${e.message}`)
     }
   }, [fetchAll])
 
@@ -1296,7 +1251,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
       setAlertToast(`Broadcast dispatched for ${regionName} via IVR/SMS!`)
       setTimeout(() => setAlertToast(''), 6000)
     } catch (e) {
-      showToast(`Couldn't dispatch alert: ${e.message}`, 'error')
+      alert(`Error dispatching alert: ${e.message}`)
     }
   }, [])
 
@@ -1408,7 +1363,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
   return (
     <div style={{
       width: '100vw', height: '100vh', position: 'relative',
-      background: 'var(--bg-primary)', fontFamily: "'Inter',sans-serif",
+      background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans','Inter',sans-serif",
       overflow: 'hidden',
     }}>
 
@@ -1422,8 +1377,8 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         position: 'absolute', top: 0, left: 0, right: 0, zIndex: 20,
         background: 'rgba(8, 14, 26, 0.92)',
         backdropFilter: 'blur(18px)',
-        borderBottom: '1px solid rgba(255, 180, 165, 0.15)',
-        boxShadow: '0 2px 24px rgba(0,0,0,0.7), 0 1px 0 rgba(255,180,165,0.08)',
+        borderBottom: '1px solid rgba(0, 229, 255, 0.15)',
+        boxShadow: '0 2px 24px rgba(0,0,0,0.7), 0 1px 0 rgba(0,229,255,0.08)',
         display: 'flex', alignItems: 'stretch',
         height: isMobile ? 54 : 62,
       }}>
@@ -1431,7 +1386,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '0 18px',
-          borderRight: '1px solid rgba(255,180,165,0.1)',
+          borderRight: '1px solid rgba(0,229,255,0.1)',
           flexShrink: 0,
         }}>
           <motion.div
@@ -1439,14 +1394,14 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             transition={{ repeat: Infinity, duration: 2 }}
             style={{
               width: 8, height: 8, borderRadius: '50%',
-              background: '#ffb4a5', boxShadow: '0 0 10px rgba(255,180,165,0.8)',
+              background: '#00E5FF', boxShadow: '0 0 10px rgba(0,229,255,0.8)',
             }}
           />
           <div>
-            <div style={{ color: '#ffb4a5', fontSize: 13, fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1 }}>
+            <div style={{ color: '#00E5FF', fontSize: 13, fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1 }}>
               RESQNET AI
             </div>
-            <div style={{ color: 'rgba(255,180,165,0.45)', fontSize: 8, fontWeight: 600, letterSpacing: '0.12em' }}>
+            <div style={{ color: 'rgba(0,229,255,0.45)', fontSize: 8, fontWeight: 600, letterSpacing: '0.12em' }}>
               FLOOD RESCUE COMMAND
             </div>
           </div>
@@ -1504,7 +1459,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         {/* Right: LIVE badge + refresh + timestamp */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px',
-          borderLeft: '1px solid rgba(255,180,165,0.1)',
+          borderLeft: '1px solid rgba(0,229,255,0.1)',
           flexShrink: 0, marginLeft: 'auto',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1513,12 +1468,12 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
               transition={{ repeat: Infinity, duration: 1.4 }}
               style={{
                 display: 'inline-block', width: 7, height: 7,
-                borderRadius: '50%', background: '#ffb4a5', boxShadow: '0 0 8px rgba(255,180,165,0.9)',
+                borderRadius: '50%', background: '#00E5FF', boxShadow: '0 0 8px rgba(0,229,255,0.9)',
               }}
             />
-            <span style={{ color: '#ffb4a5', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em' }}>LIVE</span>
+            <span style={{ color: '#00E5FF', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em' }}>LIVE</span>
           </div>
-          <div style={{ width: 1, height: 18, background: 'rgba(255,180,165,0.15)' }} />
+          <div style={{ width: 1, height: 18, background: 'rgba(0,229,255,0.15)' }} />
           <span style={{ color: '#555f70', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}>
             {lastUpdated ? fmtTime(lastUpdated) : '——:——'}
           </span>
@@ -1527,9 +1482,9 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             whileHover={refreshing ? {} : { scale: 1.1 }} whileTap={refreshing ? {} : { scale: 0.92 }}
             title="Refresh data"
             style={{
-              background: 'rgba(255,180,165,0.07)', border: '1px solid rgba(255,180,165,0.2)',
+              background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.2)',
               borderRadius: 7, width: 28, height: 28, cursor: refreshing ? 'default' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffb4a5', fontSize: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 14,
             }}
           >
             <motion.span animate={refreshing ? { rotate: 360 } : {}} transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}>↻</motion.span>
@@ -1539,9 +1494,9 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
             title="Reset map view"
             style={{
-              background: 'rgba(255,180,165,0.07)', border: '1px solid rgba(255,180,165,0.2)',
+              background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.2)',
               borderRadius: 7, width: 28, height: 28, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffb4a5', fontSize: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 14,
             }}
           >
             ⊕
@@ -1551,8 +1506,8 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               whileTap={{ scale: 0.94 }}
               style={{
-                background: 'rgba(255,180,165,0.1)', border: '1px solid rgba(255,180,165,0.35)',
-                borderRadius: 8, color: '#ffb4a5', padding: '5px 12px',
+                background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.35)',
+                borderRadius: 8, color: '#00E5FF', padding: '5px 12px',
                 fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', gap: 6,
               }}
@@ -1565,7 +1520,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
 
       {/* Leaflet MapContainer */}
       <MapContainer
-        style={{ width: '100%', height: '100%', paddingTop: isMobile ? 54 : 62, paddingLeft: isMobile ? 0 : 244, background: '#111318', zIndex: 0 }}
+        style={{ width: '100%', height: '100%', paddingTop: isMobile ? 54 : 62, background: '#080E1A', zIndex: 0 }}
         center={[26.2, 92.8]}
         zoom={7}
         zoomControl={false}
@@ -1795,35 +1750,28 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         })}
       </MapContainer>
 
-      {/* ── PERSISTENT LEFT SIDEBAR (DESKTOP) — matches Stitch "MISSION CONTROL" layout ── */}
+      {/* ── FLOATING LEFT TOOLBAR (DESKTOP) ── */}
       {!isMobile ? (
         <div style={{
           position: 'absolute',
-          top: 62, left: 0, bottom: 0,
-          width: 244,
-          zIndex: 15,
-          background: 'rgba(17,19,24,0.95)',
-          backdropFilter: 'blur(18px)',
-          borderRight: '1px solid rgba(255,180,165,0.14)',
-          boxShadow: '4px 0 24px rgba(0,0,0,0.5)',
-          display: 'flex', flexDirection: 'column',
-          overflowY: 'auto',
+          top: 80, /* below 62px header */
+          left: 16,
+          zIndex: 10,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          alignItems: 'center',
         }}>
-          {/* Section heading */}
-          <div style={{ padding: '18px 20px 10px' }}>
-            <div className="text-headline" style={{ fontSize: 15, color: '#ffb4a5', fontWeight: 700 }}>
-              MISSION CONTROL
-            </div>
-          </div>
-
           {/* Search bar */}
           <div style={{
-            margin: '0 14px 12px', background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,180,165,0.14)',
-            borderRadius: 8, padding: '7px 10px',
+            background: 'rgba(15,23,42,0.82)', backdropFilter: 'blur(14px)',
+            border: '1px solid rgba(0,229,255,0.14)',
+            borderRadius: 10, padding: '5px 10px',
             display: 'flex', alignItems: 'center', gap: 6,
+            width: 200, marginBottom: 6,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
           }}>
-            <span style={{ color: '#ffb4a5', fontSize: 12, opacity: 0.7 }}>🔍</span>
+            <span style={{ color: '#00E5FF', fontSize: 12, opacity: 0.7 }}>🔍</span>
             <input
               type="text"
               placeholder="Filter location / tier…"
@@ -1832,7 +1780,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
               style={{
                 background: 'none', border: 'none', outline: 'none',
                 color: '#ddd', fontSize: 11, flex: 1,
-                fontFamily: 'inherit', caretColor: '#ffb4a5',
+                fontFamily: 'inherit', caretColor: '#00E5FF',
               }}
             />
             {filter && (
@@ -1843,49 +1791,46 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             )}
           </div>
 
-          {/* RESPONSE group */}
-          <SidebarGroupLabel>RESPONSE</SidebarGroupLabel>
+          {/* Main panel buttons — icon only */}
           {[
-            { key: null,       icon: '🗺️', label: 'Tactical Map' },
-            { key: 'queue',    icon: '🆘', label: 'Priority Queue' },
-            { key: 'insights', icon: '🔥', label: 'Worst-Hit Ranking' },
+            { key: 'queue',         icon: '🆘', tip: 'Trapped / SOS Queue' },
+            { key: 'insights',      icon: '🔥', tip: 'Worst-Hit Locations' },
+            { key: 'camps',         icon: '🏕', tip: 'Relief Camps & Inventory' },
+            { key: 'reunification', icon: '👨‍👩‍👧', tip: 'Missing Persons Registry' },
+            { key: 'early_warning', icon: '🌊', tip: 'River Gauge / Early Warning' },
+            { key: null,            icon: '🗺️', tip: 'Map Only (close panel)' },
           ].map(btn => (
-            <SidebarRow key={btn.label} active={btn.key !== null && panel === btn.key || (btn.key === null && panel === null)} onClick={() => handlePanelBtn(btn.key)}>
-              <span style={{ fontSize: 16 }}>{btn.icon}</span> {btn.label}
-            </SidebarRow>
+            <motion.button
+              key={btn.tip}
+              onClick={() => handlePanelBtn(btn.key)}
+              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}
+              className={`toolbar-btn${btn.key !== null && panel === btn.key ? ' active' : ''}`}
+              data-tooltip={btn.tip}
+              title={btn.tip}
+            >
+              <span style={{ fontSize: 20, lineHeight: 1 }}>{btn.icon}</span>
+            </motion.button>
           ))}
 
-          {/* RESOURCES group */}
-          <SidebarGroupLabel>RESOURCES</SidebarGroupLabel>
+          <div className="toolbar-divider" />
+
+          {/* Module links */}
           {[
-            { key: 'camps',         icon: '🏕', label: 'Relief Camps' },
-            { key: 'reunification', icon: '👨‍👩‍👧', label: 'Missing Persons' },
+            { fn: onOpenTele,  icon: '📞', tip: 'Tele-Maternity Bridge (M4)' },
+            { fn: onOpenAudit, icon: '📜', tip: 'System Audit & Accountability (M6)' },
+            { fn: onOpenField, icon: '👷', tip: 'Field Worker Portal (M11)' },
           ].map(btn => (
-            <SidebarRow key={btn.label} active={panel === btn.key} onClick={() => handlePanelBtn(btn.key)}>
-              <span style={{ fontSize: 16 }}>{btn.icon}</span> {btn.label}
-            </SidebarRow>
+            <motion.button
+              key={btn.tip}
+              onClick={btn.fn}
+              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}
+              className="toolbar-btn"
+              data-tooltip={btn.tip}
+              title={btn.tip}
+            >
+              <span style={{ fontSize: 20, lineHeight: 1 }}>{btn.icon}</span>
+            </motion.button>
           ))}
-
-          {/* INTELLIGENCE group */}
-          <SidebarGroupLabel>INTELLIGENCE</SidebarGroupLabel>
-          <SidebarRow active={panel === 'early_warning'} onClick={() => handlePanelBtn('early_warning')}>
-            <span style={{ fontSize: 16 }}>🌊</span> Early Warning
-          </SidebarRow>
-
-          {/* MODULES group */}
-          <SidebarGroupLabel>MODULES</SidebarGroupLabel>
-          <SidebarRow onClick={onOpenTele}>
-            <span style={{ fontSize: 16 }}>📞</span> Health Bridge
-          </SidebarRow>
-          <SidebarRow onClick={onOpenAudit}>
-            <span style={{ fontSize: 16 }}>📜</span> Audit Log
-          </SidebarRow>
-          <SidebarRow onClick={onOpenField}>
-            <span style={{ fontSize: 16 }}>👷</span> Field Portal
-          </SidebarRow>
-
-          <div style={{ flex: 1 }} />
-          <div className="gamosa-pattern" style={{ height: 4, margin: '0 14px 14px', opacity: 0.6, borderRadius: 2 }} />
         </div>
       ) : (
         /* MOBILE — menu toggle only (header bar has the button) */
@@ -1943,12 +1888,12 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
       {/* ── LEGEND (DESKTOP ONLY) ── */}
       {!isMobile && (
         <div style={{
-          position: 'absolute', bottom: 24, left: 260, zIndex: 10,
+          position: 'absolute', bottom: 24, left: 16, zIndex: 10,
           background: 'rgba(8, 14, 26, 0.88)', backdropFilter: 'blur(14px)',
-          border: '1px solid rgba(255,180,165,0.14)', borderRadius: 10, padding: '10px 14px',
+          border: '1px solid rgba(0,229,255,0.14)', borderRadius: 10, padding: '10px 14px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
         }}>
-          <div style={{ color: 'rgba(255,180,165,0.5)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', marginBottom: 8 }}>
+          <div style={{ color: 'rgba(0,229,255,0.5)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', marginBottom: 8 }}>
             HEATMAP & FLOOD INTENSITY
           </div>
           <div style={{
@@ -1958,12 +1903,12 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555f70', fontSize: 9, marginBottom: 8 }}>
             <span>Safe</span><span>Shallow</span><span>Danger</span>
           </div>
-          <div style={{ height: 1, background: 'rgba(255,180,165,0.08)', margin: '6px 0' }} />
+          <div style={{ height: 1, background: 'rgba(0,229,255,0.08)', margin: '6px 0' }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {[
               { icon: '🌊', color: '#93c5fd', label: 'CWC River Gauge' },
               { icon: '🚨', color: '#FF3B30',  label: 'Overdue Alert' },
-              { icon: '🔗', color: '#ffb4a5',  label: 'SOS Cluster' },
+              { icon: '🔗', color: '#00E5FF',  label: 'SOS Cluster' },
               { icon: '⚠️', color: '#fcd34d',  label: 'Health Hazard' },
             ].map(item => (
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1973,7 +1918,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             ))}
           </div>
           {/* Status Pills Legend */}
-          <div style={{ height: 1, background: 'rgba(255,180,165,0.08)', margin: '6px 0' }} />
+          <div style={{ height: 1, background: 'rgba(0,229,255,0.08)', margin: '6px 0' }} />
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <span className="status-pill status-critical">CRITICAL</span>
             <span className="status-pill status-rescuing">RESCUING</span>
@@ -1982,25 +1927,23 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         </div>
       )}
 
-      {/* ── FULL-PAGE VIEW (replaces the map entirely, matching the reference
-             "MISSION CONTROL" layout — selecting a nav item swaps the whole
-             content area to a dedicated page instead of floating a narrow
-             panel over the map) ── */}
+      {/* SIDE PANEL (DESKTOP >768px) vs BOTTOM SHEET DRAWER (MOBILE <768px) */}
       <AnimatePresence mode="wait">
         {panel && (
           <motion.div
             key={panel}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-            style={fullPageStyle(isMobile)}
+            variants={isMobile ? mobileDrawerVariants : desktopPanelVariants}
+            initial="hidden" animate="visible" exit="exit"
+            style={isMobile ? mobileDrawerStyle : desktopPanelStyle}
           >
             {isMobile && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div className="mobile-drawer-handle" />
                 <button
                   onClick={() => setPanel(null)}
                   style={{
-                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8',
-                    width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 18,
+                    background: 'rgba(255,255,255,0.06)', border: 'none', color: '#94a3b8',
+                    width: 28, height: 28, borderRadius: '50%', cursor: 'pointer', fontSize: 16,
                   }}
                 >
                   ×
@@ -2008,49 +1951,47 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
               </div>
             )}
 
-            <FullPageShell>
-              {panel === 'queue' && (
-                <QueuePanel
-                  queue={queue}
-                  filter={filter}
-                  onFindNearestCamp={handleFindNearestCamp}
-                  overdueCases={auditSummary?.overdue_cases}
-                />
-              )}
-              {panel === 'insights' && (
-                <InsightsPanel
-                  cases={caseFeatures}
-                  onLocateCase={(loc) => { setMapCenter(loc); setPanel(null) }}
-                />
-              )}
-              {panel === 'camps' && (
-                <CampsPanel
-                  camps={campsData}
-                  queue={queue}
-                  onFindRouteForCase={handleFindNearestCamp}
-                  selectedRoute={selectedRoute}
-                  onClearRoute={() => setSelectedRoute(null)}
-                  onHighlightCamp={(camp) => { handleHighlightCamp(camp); setPanel(null) }}
-                  hazardAlerts={auditSummary?.hazard_alerts}
-                />
-              )}
-              {panel === 'reunification' && (
-                <ReunificationPanel
-                  reports={missingReports}
-                  onReportSubmitted={fetchAll}
-                  onResolveReport={handleResolveReport}
-                />
-              )}
-              {panel === 'early_warning' && (
-                <EarlyWarningPanel
-                  riverGauges={riverGauges}
-                  predictions={riskPredictions}
-                  onDispatchAlert={handleDispatchAlert}
-                  alertToast={alertToast}
-                  onHighlightStation={(loc) => { setMapCenter(loc); setPanel(null) }}
-                />
-              )}
-            </FullPageShell>
+            {panel === 'queue' && (
+              <QueuePanel
+                queue={queue}
+                filter={filter}
+                onFindNearestCamp={handleFindNearestCamp}
+                overdueCases={auditSummary?.overdue_cases}
+              />
+            )}
+            {panel === 'insights' && (
+              <InsightsPanel
+                cases={caseFeatures}
+                onLocateCase={(loc) => setMapCenter(loc)}
+              />
+            )}
+            {panel === 'camps' && (
+              <CampsPanel
+                camps={campsData}
+                queue={queue}
+                onFindRouteForCase={handleFindNearestCamp}
+                selectedRoute={selectedRoute}
+                onClearRoute={() => setSelectedRoute(null)}
+                onHighlightCamp={handleHighlightCamp}
+                hazardAlerts={auditSummary?.hazard_alerts}
+              />
+            )}
+            {panel === 'reunification' && (
+              <ReunificationPanel
+                reports={missingReports}
+                onReportSubmitted={fetchAll}
+                onResolveReport={handleResolveReport}
+              />
+            )}
+            {panel === 'early_warning' && (
+              <EarlyWarningPanel
+                riverGauges={riverGauges}
+                predictions={riskPredictions}
+                onDispatchAlert={handleDispatchAlert}
+                alertToast={alertToast}
+                onHighlightStation={(loc) => setMapCenter(loc)}
+              />
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -2058,20 +1999,36 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
   )
 }
 
-// Full-page content area: sits beside the persistent sidebar on desktop
-// (below the header bar), or fills the whole screen below the header on
-// mobile. Fully opaque so it replaces the map/legend/analytics overlays —
-// this is the direct equivalent of the reference's activePage page-swap.
-function fullPageStyle(isMobile) {
-  return {
-    position: 'absolute',
-    top: isMobile ? 54 : 62,
-    left: isMobile ? 0 : 244,
-    right: 0,
-    bottom: 0,
-    zIndex: 25,
-    background: 'var(--bg-primary)',
-    overflowY: 'auto',
-    padding: isMobile ? '16px' : '32px 28px 48px',
-  }
+const desktopPanelStyle = {
+  position: 'absolute',
+  top: 80, /* below 62px header + gap */
+  right: 16,
+  bottom: 16,
+  width: 278,
+  background: 'rgba(8, 14, 26, 0.88)',
+  backdropFilter: 'blur(20px)',
+  border: '1px solid rgba(0, 229, 255, 0.18)',
+  borderRadius: 14,
+  padding: '16px 14px',
+  color: 'var(--text-primary)',
+  zIndex: 10,
+  overflowY: 'auto',
+  fontFamily: 'inherit',
+  boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(0,229,255,0.05)',
+}
+
+const mobileDrawerStyle = {
+  position: 'fixed',
+  bottom: 0, left: 0, right: 0,
+  maxHeight: '75vh',
+  background: 'rgba(8, 14, 26, 0.96)',
+  backdropFilter: 'blur(24px)',
+  borderTop: '1px solid rgba(0, 229, 255, 0.2)',
+  borderRadius: '20px 20px 0 0',
+  padding: '12px 16px 24px 16px',
+  color: 'var(--text-primary)',
+  zIndex: 40,
+  overflowY: 'auto',
+  fontFamily: 'inherit',
+  boxShadow: '0 -8px 40px rgba(0,0,0,0.9), 0 -1px 0 rgba(0,229,255,0.1)',
 }
