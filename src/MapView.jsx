@@ -15,7 +15,6 @@ import {
   useMap, ZoomControl,
 } from 'react-leaflet'
 import L from 'leaflet'
-import 'leaflet.heat'
 import { motion, AnimatePresence } from 'framer-motion'
 import { showToast } from './utils/toast'
 
@@ -148,23 +147,43 @@ function HeatmapLayer({ points }) {
   const map = useMap()
   useEffect(() => {
     if (!map || !points || points.length === 0) return
-    const heat = L.heatLayer(points, {
-      radius: 42,
-      blur: 26,
-      maxZoom: 11,
-      max: 1.0,
-      gradient: {
-        0.2: '#34D399',
-        0.55: '#F59E0B',
-        0.8: '#EF9F27',
-        1.0: '#E24B4A',
-      },
-    }).addTo(map)
+
+    let heatLayerInstance = null
+    let active = true
+
+    const loadAndAddHeatLayer = async () => {
+      if (typeof window !== 'undefined') {
+        window.L = L
+      }
+      if (!L.heatLayer) {
+        await import('leaflet.heat')
+      }
+      if (!active) return
+
+      heatLayerInstance = L.heatLayer(points, {
+        radius: 42,
+        blur: 26,
+        maxZoom: 11,
+        max: 1.0,
+        gradient: {
+          0.2: '#34D399',
+          0.55: '#F59E0B',
+          0.8: '#EF9F27',
+          1.0: '#E24B4A',
+        },
+      }).addTo(map)
+    }
+
+    loadAndAddHeatLayer()
 
     return () => {
-      map.removeLayer(heat)
+      active = false
+      if (heatLayerInstance && map) {
+        map.removeLayer(heatLayerInstance)
+      }
     }
   }, [map, points])
+
   return null
 }
 
