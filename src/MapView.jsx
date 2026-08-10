@@ -2104,3 +2104,17 @@ const mobileDrawerStyle = {
   fontFamily: 'inherit',
   boxShadow: '0 -8px 40px rgba(0,0,0,0.9), 0 -1px 0 rgba(0,229,255,0.1)',
 }
+
+function fullPageStyle(isMobile) {
+  return {
+    position: 'absolute',
+    top: isMobile ? 54 : 62,
+    left: isMobile ? 0 : 244,
+    right: 0,
+    bottom: 0,
+    zIndex: 25,
+    background: 'var(--bg-primary)',
+    overflowY: 'auto',
+    padding: isMobile ? '16px' : '32px 28px 48px',
+  }
+}
