@@ -17,6 +17,7 @@ import {
 import L from 'leaflet'
 import 'leaflet.heat'
 import { motion, AnimatePresence } from 'framer-motion'
+import { showToast } from './utils/toast'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // Vite proxy → localhost:8000
@@ -1750,26 +1751,33 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         })}
       </MapContainer>
 
-      {/* ── FLOATING LEFT TOOLBAR (DESKTOP) ── */}
+      {/* ── PERSISTENT LEFT SIDEBAR (DESKTOP) — MISSION CONTROL layout ── */}
       {!isMobile ? (
         <div style={{
           position: 'absolute',
-          top: 80, /* below 62px header */
-          left: 16,
-          zIndex: 10,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 6,
-          alignItems: 'center',
+          top: 62, left: 0, bottom: 0,
+          width: 244,
+          zIndex: 15,
+          background: 'rgba(8,14,26,0.97)',
+          backdropFilter: 'blur(18px)',
+          borderRight: '1px solid rgba(0,229,255,0.14)',
+          boxShadow: '4px 0 24px rgba(0,0,0,0.5)',
+          display: 'flex', flexDirection: 'column',
+          overflowY: 'auto',
         }}>
+          {/* Heading */}
+          <div style={{ padding: '18px 20px 10px' }}>
+            <div style={{ fontSize: 13, color: '#00E5FF', fontWeight: 700, letterSpacing: '0.08em' }}>
+              MISSION CONTROL
+            </div>
+          </div>
+
           {/* Search bar */}
           <div style={{
-            background: 'rgba(15,23,42,0.82)', backdropFilter: 'blur(14px)',
+            margin: '0 14px 12px', background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(0,229,255,0.14)',
-            borderRadius: 10, padding: '5px 10px',
+            borderRadius: 8, padding: '7px 10px',
             display: 'flex', alignItems: 'center', gap: 6,
-            width: 200, marginBottom: 6,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
           }}>
             <span style={{ color: '#00E5FF', fontSize: 12, opacity: 0.7 }}>🔍</span>
             <input
@@ -1791,46 +1799,48 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             )}
           </div>
 
-          {/* Main panel buttons — icon only */}
+          {/* RESPONSE group */}
+          <SidebarGroupLabel>RESPONSE</SidebarGroupLabel>
           {[
-            { key: 'queue',         icon: '🆘', tip: 'Trapped / SOS Queue' },
-            { key: 'insights',      icon: '🔥', tip: 'Worst-Hit Locations' },
-            { key: 'camps',         icon: '🏕', tip: 'Relief Camps & Inventory' },
-            { key: 'reunification', icon: '👨‍👩‍👧', tip: 'Missing Persons Registry' },
-            { key: 'early_warning', icon: '🌊', tip: 'River Gauge / Early Warning' },
-            { key: null,            icon: '🗺️', tip: 'Map Only (close panel)' },
+            { key: null,       icon: '🗺️', label: 'Tactical Map' },
+            { key: 'queue',    icon: '🆘', label: 'Priority Queue' },
+            { key: 'insights', icon: '🔥', label: 'Worst-Hit Ranking' },
           ].map(btn => (
-            <motion.button
-              key={btn.tip}
-              onClick={() => handlePanelBtn(btn.key)}
-              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}
-              className={`toolbar-btn${btn.key !== null && panel === btn.key ? ' active' : ''}`}
-              data-tooltip={btn.tip}
-              title={btn.tip}
-            >
-              <span style={{ fontSize: 20, lineHeight: 1 }}>{btn.icon}</span>
-            </motion.button>
+            <SidebarRow key={btn.label} active={btn.key !== null && panel === btn.key || (btn.key === null && panel === null)} onClick={() => handlePanelBtn(btn.key)}>
+              <span style={{ fontSize: 16 }}>{btn.icon}</span> {btn.label}
+            </SidebarRow>
           ))}
 
-          <div className="toolbar-divider" />
-
-          {/* Module links */}
+          {/* RESOURCES group */}
+          <SidebarGroupLabel>RESOURCES</SidebarGroupLabel>
           {[
-            { fn: onOpenTele,  icon: '📞', tip: 'Tele-Maternity Bridge (M4)' },
-            { fn: onOpenAudit, icon: '📜', tip: 'System Audit & Accountability (M6)' },
-            { fn: onOpenField, icon: '👷', tip: 'Field Worker Portal (M11)' },
+            { key: 'camps',         icon: '🏕️', label: 'Relief Camps' },
+            { key: 'reunification', icon: '👨‍👩‍👧', label: 'Missing Persons' },
           ].map(btn => (
-            <motion.button
-              key={btn.tip}
-              onClick={btn.fn}
-              whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}
-              className="toolbar-btn"
-              data-tooltip={btn.tip}
-              title={btn.tip}
-            >
-              <span style={{ fontSize: 20, lineHeight: 1 }}>{btn.icon}</span>
-            </motion.button>
+            <SidebarRow key={btn.label} active={panel === btn.key} onClick={() => handlePanelBtn(btn.key)}>
+              <span style={{ fontSize: 16 }}>{btn.icon}</span> {btn.label}
+            </SidebarRow>
           ))}
+
+          {/* INTELLIGENCE group */}
+          <SidebarGroupLabel>INTELLIGENCE</SidebarGroupLabel>
+          <SidebarRow active={panel === 'early_warning'} onClick={() => handlePanelBtn('early_warning')}>
+            <span style={{ fontSize: 16 }}>🌊</span> Early Warning
+          </SidebarRow>
+
+          {/* MODULES group */}
+          <SidebarGroupLabel>MODULES</SidebarGroupLabel>
+          <SidebarRow onClick={onOpenTele}>
+            <span style={{ fontSize: 16 }}>📞</span> Health Bridge
+          </SidebarRow>
+          <SidebarRow onClick={onOpenAudit}>
+            <span style={{ fontSize: 16 }}>📜</span> Audit Log
+          </SidebarRow>
+          <SidebarRow onClick={onOpenField}>
+            <span style={{ fontSize: 16 }}>👷</span> Field Portal
+          </SidebarRow>
+
+          <div style={{ flex: 1 }} />
         </div>
       ) : (
         /* MOBILE — menu toggle only (header bar has the button) */
@@ -1883,12 +1893,10 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         )}
       </AnimatePresence>
 
-      {/* Desktop top-right: removed (controls now in metrics header bar) */}
-
       {/* ── LEGEND (DESKTOP ONLY) ── */}
       {!isMobile && (
         <div style={{
-          position: 'absolute', bottom: 24, left: 16, zIndex: 10,
+          position: 'absolute', bottom: 24, left: 260, zIndex: 10,
           background: 'rgba(8, 14, 26, 0.88)', backdropFilter: 'blur(14px)',
           border: '1px solid rgba(0,229,255,0.14)', borderRadius: 10, padding: '10px 14px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
@@ -1927,23 +1935,22 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         </div>
       )}
 
-      {/* SIDE PANEL (DESKTOP >768px) vs BOTTOM SHEET DRAWER (MOBILE <768px) */}
+      {/* FULL-PAGE CONTENT AREA beside the sidebar (desktop) or full screen (mobile) */}
       <AnimatePresence mode="wait">
         {panel && (
           <motion.div
             key={panel}
-            variants={isMobile ? mobileDrawerVariants : desktopPanelVariants}
-            initial="hidden" animate="visible" exit="exit"
-            style={isMobile ? mobileDrawerStyle : desktopPanelStyle}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.16 }}
+            style={fullPageStyle(isMobile)}
           >
             {isMobile && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <div className="mobile-drawer-handle" />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                 <button
                   onClick={() => setPanel(null)}
                   style={{
-                    background: 'rgba(255,255,255,0.06)', border: 'none', color: '#94a3b8',
-                    width: 28, height: 28, borderRadius: '50%', cursor: 'pointer', fontSize: 16,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8',
+                    width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 18,
                   }}
                 >
                   ×
@@ -1951,50 +1958,96 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
               </div>
             )}
 
-            {panel === 'queue' && (
-              <QueuePanel
-                queue={queue}
-                filter={filter}
-                onFindNearestCamp={handleFindNearestCamp}
-                overdueCases={auditSummary?.overdue_cases}
-              />
-            )}
-            {panel === 'insights' && (
-              <InsightsPanel
-                cases={caseFeatures}
-                onLocateCase={(loc) => setMapCenter(loc)}
-              />
-            )}
-            {panel === 'camps' && (
-              <CampsPanel
-                camps={campsData}
-                queue={queue}
-                onFindRouteForCase={handleFindNearestCamp}
-                selectedRoute={selectedRoute}
-                onClearRoute={() => setSelectedRoute(null)}
-                onHighlightCamp={handleHighlightCamp}
-                hazardAlerts={auditSummary?.hazard_alerts}
-              />
-            )}
-            {panel === 'reunification' && (
-              <ReunificationPanel
-                reports={missingReports}
-                onReportSubmitted={fetchAll}
-                onResolveReport={handleResolveReport}
-              />
-            )}
-            {panel === 'early_warning' && (
-              <EarlyWarningPanel
-                riverGauges={riverGauges}
-                predictions={riskPredictions}
-                onDispatchAlert={handleDispatchAlert}
-                alertToast={alertToast}
-                onHighlightStation={(loc) => setMapCenter(loc)}
-              />
-            )}
+            <FullPageShell>
+              {panel === 'queue' && (
+                <QueuePanel
+                  queue={queue}
+                  filter={filter}
+                  onFindNearestCamp={handleFindNearestCamp}
+                  overdueCases={auditSummary?.overdue_cases}
+                />
+              )}
+              {panel === 'insights' && (
+                <InsightsPanel
+                  cases={caseFeatures}
+                  onLocateCase={(loc) => { setMapCenter(loc); setPanel(null) }}
+                />
+              )}
+              {panel === 'camps' && (
+                <CampsPanel
+                  camps={campsData}
+                  queue={queue}
+                  onFindRouteForCase={handleFindNearestCamp}
+                  selectedRoute={selectedRoute}
+                  onClearRoute={() => setSelectedRoute(null)}
+                  onHighlightCamp={(camp) => { handleHighlightCamp(camp); setPanel(null) }}
+                  hazardAlerts={auditSummary?.hazard_alerts}
+                />
+              )}
+              {panel === 'reunification' && (
+                <ReunificationPanel
+                  reports={missingReports}
+                  onReportSubmitted={fetchAll}
+                  onResolveReport={handleResolveReport}
+                />
+              )}
+              {panel === 'early_warning' && (
+                <EarlyWarningPanel
+                  riverGauges={riverGauges}
+                  predictions={riskPredictions}
+                  onDispatchAlert={handleDispatchAlert}
+                  alertToast={alertToast}
+                  onHighlightStation={(loc) => { setMapCenter(loc); setPanel(null) }}
+                />
+              )}
+            </FullPageShell>
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+  )
+}
+
+// ── Sidebar helper components ──────────────────────────────────────────────
+function SidebarGroupLabel({ children }) {
+  return (
+    <div style={{
+      padding: '10px 20px 4px',
+      fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
+      color: 'rgba(0,229,255,0.4)', textTransform: 'uppercase',
+    }}>
+      {children}
+    </div>
+  )
+}
+
+function SidebarRow({ children, active, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        display: 'flex', alignItems: 'center', gap: 10,
+        width: '100%', padding: '9px 20px', border: 'none',
+        background: active ? 'rgba(0,229,255,0.1)' : 'transparent',
+        borderLeft: active ? '3px solid #00E5FF' : '3px solid transparent',
+        color: active ? '#00E5FF' : '#999',
+        fontSize: 13, fontWeight: active ? 500 : 400,
+        cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit',
+        transition: 'background 0.15s, color 0.15s',
+      }}
+      onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.color = '#ddd' } }}
+      onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#999' } }}
+    >
+      {children}
+    </button>
+  )
+}
+
+// Full-page content area: sits beside the sidebar on desktop
+function FullPageShell({ children }) {
+  return (
+    <div style={{ padding: '28px 28px 48px', maxWidth: 900 }}>
+      {children}
     </div>
   )
 }
