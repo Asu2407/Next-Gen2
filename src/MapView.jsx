@@ -19,7 +19,7 @@ import 'leaflet.heat'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
-const API_BASE = ''  // Vite proxy → localhost:8000
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // Vite proxy → localhost:8000
 
 const TIER = {
   'Tier 1': { color: '#E24B4A', glow: 'rgba(226,75,74,0.55)',  label: 'T1 · Critical' },
