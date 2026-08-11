@@ -1,4 +1,4 @@
-/* ── Custom Reset & Font Setup ────────────────────────────────────────────── */
+﻿/* ── Custom Reset & Font Setup ────────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
@@ -399,7 +399,7 @@ body, html {
   background: var(--bg-primary) !important;
   font-family: 'Plus Jakarta Sans', sans-serif !important;
 }
-.resqnet-tooltip {
+.Sahayak-tooltip {
   background: rgba(8, 14, 26, 0.96) !important;
   backdrop-filter: blur(8px) !important;
   border: 1px solid var(--panel-border) !important;
@@ -408,12 +408,12 @@ body, html {
   box-shadow: 0 4px 20px rgba(0,0,0,0.6) !important;
   padding: 6px 10px !important;
 }
-.resqnet-tooltip::before { border-top-color: rgba(8, 14, 26, 0.96) !important; }
-.resqnet-popup .leaflet-popup-content-wrapper {
+.Sahayak-tooltip::before { border-top-color: rgba(8, 14, 26, 0.96) !important; }
+.Sahayak-popup .leaflet-popup-content-wrapper {
   background: transparent !important; box-shadow: none !important;
   padding: 0 !important; border-radius: 10px !important;
 }
-.resqnet-popup .leaflet-popup-tip { background: #0f172a !important; }
+.Sahayak-popup .leaflet-popup-tip { background: #0f172a !important; }
 
 /* ── Custom Scrollbars ────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }

@@ -1,6 +1,6 @@
-services:
+﻿services:
   - type: web
-    name: resqnet-backend
+    name: Sahayak-backend
     runtime: python
     region: oregon
     plan: free

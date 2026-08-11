@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html class="dark" lang="en">
 
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>ResqNet AI - Macro-Tactical Map</title>
+    <title>SAHAYAK - Macro-Tactical Map</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <!-- Google Fonts & Material Symbols -->
@@ -306,7 +306,7 @@
                     setError(null);
                 } catch (err) {
                     console.error("Fetch Error:", err);
-                    setError(err.message || 'Error communicating with ResqNet API server');
+                    setError(err.message || 'Error communicating with Sahayak API server');
                     setLoading(false);
                 }
             };
@@ -512,7 +512,7 @@
                     <div className="min-h-screen bg-[#0b1220] flex flex-col items-center justify-center gap-6 font-sans">
                         <div className="w-12 h-12 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin"></div>
                         <div className="text-on-surface-variant font-mono text-[14px] tracking-widest text-[#999] uppercase animate-pulse">
-                            Initializing ResqNet Command Console...
+                            Initializing Sahayak Command Console...
                         </div>
                     </div>
                 );
@@ -525,7 +525,7 @@
                         <div className="text-error text-5xl mb-4">!</div>
                         <h2 className="text-[20px] font-bold text-error mb-2">Backend Connection Failed</h2>
                         <p className="text-on-surface-variant text-[13px] max-w-md text-[#999] mb-6">
-                            Couldn't establish a link to the ResqNet API server. Ensure the backend FastAPI server is running.
+                            Couldn't establish a link to the Sahayak API server. Ensure the backend FastAPI server is running.
                         </p>
                         <button onClick={fetchData} className="px-6 py-2.5 bg-primary/20 border border-primary/50 text-primary rounded flex items-center gap-2 font-mono text-label-caps hover:bg-primary/30 active:scale-95 transition-all">
                             <span className="material-symbols-outlined">refresh</span> RETRY CONNECTION
@@ -599,7 +599,7 @@
                                     </button>
                                     <span className="material-symbols-outlined text-primary font-headline-lg text-headline-lg" style={{ fontVariationSettings: "'FILL' 1" }}>radar</span>
                                     <h1 className="font-headline-lg text-headline-lg tracking-tight text-primary uppercase font-bold text-[18px] sm:text-[24px] md:text-[32px]">
-                                        RESQNET AI: FLOOD COMMAND
+                                        SAHAYAK: FLOOD COMMAND
                                     </h1>
                                 </div>
                                 <div className="flex items-center">

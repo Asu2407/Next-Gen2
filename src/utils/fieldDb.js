@@ -1,10 +1,10 @@
-/**
+﻿/**
  * Module 11 — Browser IndexedDB wrapper for local-first field worker capture
- * DB Name: ResqNetFieldDB
+ * DB Name: SahayakFieldDB
  * Store Name: field_records (keyPath: client_id)
  */
 
-const DB_NAME = 'ResqNetFieldDB'
+const DB_NAME = 'SahayakFieldDB'
 const DB_VERSION = 1
 const STORE_NAME = 'field_records'
 

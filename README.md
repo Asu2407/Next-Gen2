@@ -1,7 +1,7 @@
-# GEMINI.md — ResqNet AI (Next-Gen2)
+# GEMINI.md — SAHAYAK (Next-Gen2)
 
 ## Overview
-This project is **ResqNet AI**, a flood-response coordination engine built for
+This project is **SAHAYAK**, a flood-response coordination engine built for
 Assam flood relief operations, developed as a hackathon MVP. It coordinates
 SOS intake, triage, rescue dispatch, tele-health, shelter routing, and
 post-rescue accountability into one control-room dashboard.

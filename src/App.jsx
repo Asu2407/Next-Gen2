@@ -1,5 +1,5 @@
-/**
- * ResqNet AI — Root App Shell
+﻿/**
+ * SAHAYAK — Root App Shell
  * Routes between:
  *   - MapView         (Module 3, 5, 7, 8, 10 — Command Dashboard & Map)
  *   - TelePage        (Module 4 — Tele-Maternity Emergency Bridge)

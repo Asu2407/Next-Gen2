@@ -1,7 +1,7 @@
-import os
+﻿import os
 
 class Settings:
-    APP_NAME: str = "ResqNet AI - SOS Intake Engine"
+    APP_NAME: str = "SAHAYAK - SOS Intake Engine"
     VERSION: str = "1.0.0"
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")

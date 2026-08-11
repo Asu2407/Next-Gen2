@@ -1,4 +1,4 @@
-import asyncio
+﻿import asyncio
 import os
 import sys
 import json
@@ -16,7 +16,7 @@ from app.services.triage_service import assign_dvs_tier, sort_triage_queue, queu
 
 async def test_dvs_triage_and_queue():
     print("=" * 80)
-    print("      RESQNET AI (NEXT-GEN2) - MODULE 2 DVS TRIAGE ENGINE TEST HARNESS")
+    print("      SAHAYAK (NEXT-GEN2) - MODULE 2 DVS TRIAGE ENGINE TEST HARNESS")
     print("=" * 80)
 
     # 1. Test Direct Unit Tier Assigner

@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,7 +24,7 @@ logging.basicConfig(
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.VERSION,
-    description="ResqNet AI - Multilingual Voice SOS Intake, DVS Triage Queue & Water Zonation Map Engine"
+    description="SAHAYAK - Multilingual Voice SOS Intake, DVS Triage Queue & Water Zonation Map Engine"
 )
 
 # CORS middleware for React/Frontend integration
