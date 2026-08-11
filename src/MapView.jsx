@@ -87,59 +87,86 @@ function makeCaseIcon(tier, isOverdue = false, size = 22, victimCount = 1, merge
   const isT1 = tier === 'Tier 1'
   const finalColor = isOverdue ? '#E24B4A' : meta.color
   const isMerged = mergedCount > 1
+  // Outer glow ring size
+  const ringSize = size + 18
 
   return L.divIcon({
     className: '',
     html: `
-      <div style="position:relative;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center;">
-        ${(isT1 || isOverdue) ? `<div class="t1-ring" style="background:${finalColor}66;"></div>` : ''}
-        <div class="${(isT1 || isOverdue) ? 't1-core' : 'tier-dot'}"
-             style="position:absolute;inset:0;border-radius:50%;
-                    background:${finalColor};
-                    border:${isMerged ? '2.5px solid #38bdf8' : `2px solid rgba(255,255,255,${isT1 ? 0.9 : 0.6})`};
-                    box-shadow:0 0 ${isT1 ? 12 : 5}px ${meta.glow};
+      <div style="position:relative;width:${ringSize}px;height:${ringSize}px;display:flex;align-items:center;justify-content:center;">
+        <!-- Teal outer glow ring (satellite style) -->
+        <div style="position:absolute;inset:0;border-radius:50%;
+                    background:radial-gradient(circle, ${finalColor}44 0%, #00E5FF22 55%, transparent 75%);
+                    box-shadow:0 0 ${isT1 ? 22 : 14}px 6px ${'#00E5FF'}44;
+                    animation:${(isT1 || isOverdue) ? 'satellitePulse 1.8s ease-in-out infinite' : 'none'};"></div>
+        <!-- Inner marker: dark rounded square with color border -->
+        <div style="position:relative;z-index:2;width:${size}px;height:${size}px;
+                    border-radius:${Math.round(size * 0.28)}px;
+                    background:rgba(5,10,20,0.92);
+                    border:2px solid ${finalColor};
+                    box-shadow:0 0 ${isT1 ? 14 : 8}px ${finalColor}cc, inset 0 0 6px rgba(0,0,0,0.6);
                     display:flex;align-items:center;justify-content:center;">
-          <span style="color:#ffffff;font-size:${size >= 24 ? '11px' : '10px'};font-weight:700;font-family:'Inter',sans-serif;line-height:1;z-index:2;text-shadow:0 1px 2px rgba(0,0,0,0.8);">
+          <span style="color:${finalColor};font-size:${size >= 24 ? '11px' : '10px'};font-weight:800;font-family:'Inter',sans-serif;line-height:1;text-shadow:0 0 4px ${finalColor}99;">
             ${victimCount}
           </span>
         </div>
-        ${isMerged ? `<div style="position:absolute;top:-4px;right:-4px;background:#0284c7;color:#fff;font-size:8px;font-weight:800;border-radius:50%;width:13px;height:13px;display:flex;align-items:center;justify-content:center;border:1px solid #fff;box-shadow:0 0 4px #38bdf8;">${mergedCount}</div>` : ''}
+        ${isMerged ? `<div style="position:absolute;top:0;right:0;z-index:3;background:#0284c7;color:#fff;font-size:8px;font-weight:800;border-radius:50%;width:14px;height:14px;display:flex;align-items:center;justify-content:center;border:1.5px solid #fff;box-shadow:0 0 6px #38bdf8;">${mergedCount}</div>` : ''}
       </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    popupAnchor: [0, -size / 2 - 6],
-    tooltipAnchor: [size / 2 + 4, 0],
+    iconSize: [ringSize, ringSize],
+    iconAnchor: [ringSize / 2, ringSize / 2],
+    popupAnchor: [0, -ringSize / 2 - 4],
+    tooltipAnchor: [ringSize / 2 + 2, 0],
   })
 }
 
 function makeCampIcon(status, hasHazard = false) {
   const statusColor = hasHazard ? '#EF9F27' : (status === 'Full' ? '#E24B4A' : status === 'Near Capacity' ? '#EF9F27' : '#639922')
+  // Satellite-style: dark rounded-square with colored glow ring
   return L.divIcon({
     className: '',
     html: `
-      <div style="position:relative;width:30px;height:30px;display:flex;align-items:center;justify-content:center;">
-        <div style="position:absolute;inset:0;border-radius:8px;background:rgba(10,16,30,0.95);border:2px solid ${statusColor};box-shadow:0 0 10px ${statusColor}88;"></div>
-        <span style="position:relative;font-size:15px;z-index:1;">${hasHazard ? '⚠️' : '🏕️'}</span>
+      <div style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:absolute;inset:0;border-radius:50%;
+                    background:radial-gradient(circle, ${statusColor}22 0%, transparent 70%);
+                    box-shadow:0 0 14px 4px ${statusColor}44;"></div>
+        <div style="position:relative;z-index:2;width:30px;height:30px;
+                    border-radius:8px;
+                    background:rgba(5,10,20,0.95);
+                    border:2px solid ${statusColor};
+                    box-shadow:0 0 10px ${statusColor}88;
+                    display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:15px;line-height:1;">${hasHazard ? '⚠️' : '🏕️'}</span>
+        </div>
       </div>`,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-    popupAnchor: [0, -18],
-    tooltipAnchor: [16, 0],
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    popupAnchor: [0, -24],
+    tooltipAnchor: [23, 0],
   })
 }
 
 function makeGaugeIcon(risk) {
   const color = RISK_COLOR[risk] ?? '#639922'
+  // Satellite-style: dark rounded-square with teal glow ring
   return L.divIcon({
     className: '',
     html: `
-      <div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center;">
-        <div style="position:absolute;inset:0;border-radius:50%;background:rgba(10,16,30,0.92);border:2px solid ${color};box-shadow:0 0 10px ${color}aa;"></div>
-        <span style="position:relative;font-size:13px;z-index:1;">🌊</span>
+      <div style="position:relative;width:42px;height:42px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:absolute;inset:0;border-radius:50%;
+                    background:radial-gradient(circle, #00E5FF22 0%, transparent 70%);
+                    box-shadow:0 0 12px 4px #00E5FF33;"></div>
+        <div style="position:relative;z-index:2;width:28px;height:28px;
+                    border-radius:8px;
+                    background:rgba(5,10,20,0.95);
+                    border:2px solid ${color};
+                    box-shadow:0 0 10px ${color}aa;
+                    display:flex;align-items:center;justify-content:center;">
+          <span style="font-size:13px;line-height:1;">🌊</span>
+        </div>
       </div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -16],
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
+    popupAnchor: [0, -22],
   })
 }
 
@@ -160,16 +187,19 @@ function HeatmapLayer({ points }) {
       }
       if (!active) return
 
+      // Satellite-optimised heatmap: larger radius + soft blur + teal→amber→red gradient
       heatLayerInstance = L.heatLayer(points, {
-        radius: 42,
-        blur: 26,
-        maxZoom: 11,
+        radius: 58,
+        blur: 38,
+        maxZoom: 12,
         max: 1.0,
         gradient: {
-          0.2: '#34D399',
+          0.0:  '#00E5FF11',
+          0.15: '#34D399',
+          0.35: '#22d3ee',
           0.55: '#F59E0B',
-          0.8: '#EF9F27',
-          1.0: '#E24B4A',
+          0.78: '#EF9F27',
+          1.0:  '#E24B4A',
         },
       }).addTo(map)
     }
@@ -1551,21 +1581,18 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         {bounds && <FitBoundsController bounds={bounds} trigger={fitTrigger} />}
         {mapCenter && <CenterController center={mapCenter} />}
 
+        {/* Satellite base layer — Esri World Imagery */}
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution='&copy; CARTO &copy; OpenStreetMap'
-          subdomains="abcd"
-          maxZoom={20}
-          detectRetina={true}
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          attribution='Tiles &copy; Esri &mdash; Source: Esri, USGS, NOAA'
+          maxZoom={19}
         />
-
-        {/* DARK VIGNETTE MASK */}
-        <Polygon
-          positions={ASSAM_BOUNDING_MASK}
-          pathOptions={{
-            fillColor: '#050a14', fillOpacity: 0.62,
-            stroke: true, color: '#334155', weight: 1.5, dashArray: '5, 5',
-          }}
+        {/* Optional hillshade labels overlay for readability */}
+        <TileLayer
+          url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+          attribution=''
+          maxZoom={19}
+          opacity={0.6}
         />
 
         {/* HEATMAP LAYER */}
@@ -1912,41 +1939,51 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         )}
       </AnimatePresence>
 
-      {/* ── LEGEND (DESKTOP ONLY) ── */}
+      {/* ── LEGEND (DESKTOP ONLY) — matches satellite map reference ── */}
       {!isMobile && (
         <div style={{
           position: 'absolute', bottom: 24, left: 260, zIndex: 10,
-          background: 'rgba(8, 14, 26, 0.88)', backdropFilter: 'blur(14px)',
-          border: '1px solid rgba(0,229,255,0.14)', borderRadius: 10, padding: '10px 14px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.6)',
+          background: 'rgba(6, 11, 22, 0.92)', backdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: '12px 16px',
+          boxShadow: '0 6px 28px rgba(0,0,0,0.75)',
+          minWidth: 190,
         }}>
-          <div style={{ color: 'rgba(0,229,255,0.5)', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', marginBottom: 8 }}>
-            HEATMAP & FLOOD INTENSITY
+          {/* Title */}
+          <div style={{ color: '#ddd', fontSize: 9, fontWeight: 700, letterSpacing: '0.12em', marginBottom: 10, textTransform: 'uppercase' }}>
+            Heatmap &amp; Flood Intensity
           </div>
+
+          {/* Gradient bar */}
           <div style={{
-            height: 6, borderRadius: 3, marginBottom: 6,
-            background: 'linear-gradient(90deg, #34D399 0%, #F59E0B 40%, #EF9F27 75%, #E24B4A 100%)',
+            height: 7, borderRadius: 4, marginBottom: 5,
+            background: 'linear-gradient(90deg, #34D399 0%, #22d3ee 25%, #F59E0B 55%, #EF9F27 78%, #E24B4A 100%)',
+            boxShadow: '0 0 8px rgba(226,75,74,0.35)',
           }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555f70', fontSize: 9, marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#888', fontSize: 9, marginBottom: 10 }}>
             <span>Safe</span><span>Shallow</span><span>Danger</span>
           </div>
-          <div style={{ height: 1, background: 'rgba(0,229,255,0.08)', margin: '6px 0' }} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+
+          {/* Divider */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', marginBottom: 10 }} />
+
+          {/* Icon legend */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {[
               { icon: '🌊', color: '#93c5fd', label: 'CWC River Gauge' },
-              { icon: '🚨', color: '#FF3B30',  label: 'Overdue Alert' },
-              { icon: '🔗', color: '#00E5FF',  label: 'SOS Cluster' },
-              { icon: '⚠️', color: '#fcd34d',  label: 'Health Hazard' },
+              { icon: '🚨', color: '#FF3B30',  label: 'Overdue Alert'   },
+              { icon: '🔗', color: '#00E5FF',  label: 'SOS Cluster'     },
+              { icon: '⚠️', color: '#fcd34d',  label: 'Health Hazard'   },
             ].map(item => (
-              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 10 }}>{item.icon}</span>
-                <span style={{ color: item.color, fontSize: 9, fontWeight: 600 }}>{item.label}</span>
+              <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                <span style={{ fontSize: 11, lineHeight: 1 }}>{item.icon}</span>
+                <span style={{ color: item.color, fontSize: 10, fontWeight: 600 }}>{item.label}</span>
               </div>
             ))}
           </div>
-          {/* Status Pills Legend */}
-          <div style={{ height: 1, background: 'rgba(0,229,255,0.08)', margin: '6px 0' }} />
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+
+          {/* Status pills */}
+          <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '10px 0 8px' }} />
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
             <span className="status-pill status-critical">CRITICAL</span>
             <span className="status-pill status-rescuing">RESCUING</span>
             <span className="status-pill status-safe">SAFE</span>
