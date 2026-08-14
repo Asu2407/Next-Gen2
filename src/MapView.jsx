@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Module 3, 5, 6, 7, 8 & 10 — SAHAYAK Tactical Command Dashboard
  * Responsive UI/UX Upgrade:
  *  1. Smooth Heatmap Overlay (leaflet.heat gradient)
@@ -17,6 +17,11 @@ import {
 import L from 'leaflet'
 import { motion, AnimatePresence } from 'framer-motion'
 import { showToast } from './utils/toast'
+import { useLang } from './i18n/LangContext'
+import LanguageSwitcher from './components/LanguageSwitcher'
+import { audioFx } from './utils/audioFx'
+import DroneReconModal from './components/DroneReconModal'
+import LiveIncidentSimulator from './components/LiveIncidentSimulator'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // Vite proxy → localhost:8000
@@ -35,6 +40,38 @@ const RISK_COLOR = {
   moderate: '#fde047',
   low: '#639922',
 }
+
+function makeStationIcon(agency) {
+  const color = agency === 'IAF' ? '#a78bfa' : agency === 'NDRF' ? '#38bdf8' : '#34d399'
+  const svgContent = agency === 'IAF'
+    ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M12 6v4"/><path d="M7 10h10a4 4 0 0 1 4 4v2H3v-2a4 4 0 0 1 4-4z"/><path d="M5 19h14"/><path d="M7 16v3"/><path d="M17 16v3"/></svg>`
+    : agency === 'NDRF'
+    ? `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20c3-1.5 6 1.5 9 0s6-1.5 9 0"/><path d="M4 16l2.5-9h11l2.5 9z"/><path d="M12 3v4"/></svg>`
+    : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>`
+
+  return L.divIcon({
+    className: '',
+    html: `
+      <div style="position:relative;width:44px;height:44px;display:flex;align-items:center;justify-content:center;">
+        <div style="position:absolute;inset:0;border-radius:50%;
+                    background:radial-gradient(circle, ${color}33 0%, transparent 70%);
+                    box-shadow:0 0 16px 4px ${color}55;" class="station-pulse"></div>
+        <div style="position:relative;z-index:2;width:30px;height:30px;
+                    border-radius:8px;
+                    background:rgba(5,10,20,0.95);
+                    border:2px solid ${color};
+                    box-shadow:0 0 12px ${color}bb;
+                    display:flex;align-items:center;justify-content:center;">
+          ${svgContent}
+        </div>
+      </div>`,
+    iconSize: [44, 44],
+    iconAnchor: [22, 22],
+    popupAnchor: [0, -24],
+    tooltipAnchor: [23, 0],
+  })
+}
+
 
 const ASSAM_BOUNDING_MASK = [
   [
@@ -121,6 +158,10 @@ function makeCaseIcon(tier, isOverdue = false, size = 22, victimCount = 1, merge
 
 function makeCampIcon(status, hasHazard = false) {
   const statusColor = hasHazard ? '#EF9F27' : (status === 'Full' ? '#E24B4A' : status === 'Near Capacity' ? '#EF9F27' : '#639922')
+  const svgContent = hasHazard
+    ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF9F27" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+    : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${statusColor}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-18-7 18"/><path d="M12 3v18"/><path d="M8 21l4-9 4 9"/></svg>`
+
   // Satellite-style: dark rounded-square with colored glow ring
   return L.divIcon({
     className: '',
@@ -135,7 +176,7 @@ function makeCampIcon(status, hasHazard = false) {
                     border:2px solid ${statusColor};
                     box-shadow:0 0 10px ${statusColor}88;
                     display:flex;align-items:center;justify-content:center;">
-          <span style="font-size:15px;line-height:1;">${hasHazard ? '⚠️' : '🏕️'}</span>
+          ${svgContent}
         </div>
       </div>`,
     iconSize: [44, 44],
@@ -147,6 +188,8 @@ function makeCampIcon(status, hasHazard = false) {
 
 function makeGaugeIcon(risk) {
   const color = RISK_COLOR[risk] ?? '#639922'
+  const svgContent = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6c3-1.8 6 1.8 9 0s6-1.8 9 0"/><path d="M2 12c3-1.8 6 1.8 9 0s6-1.8 9 0"/><path d="M2 18c3-1.8 6 1.8 9 0s6-1.8 9 0"/></svg>`
+
   // Satellite-style: dark rounded-square with teal glow ring
   return L.divIcon({
     className: '',
@@ -161,7 +204,7 @@ function makeGaugeIcon(risk) {
                     border:2px solid ${color};
                     box-shadow:0 0 10px ${color}aa;
                     display:flex;align-items:center;justify-content:center;">
-          <span style="font-size:13px;line-height:1;">🌊</span>
+          ${svgContent}
         </div>
       </div>`,
     iconSize: [42, 42],
@@ -395,25 +438,53 @@ function CasePopupContent({ props, onFindNearestCamp }) {
         </div>
       )}
 
-      {onFindNearestCamp && (
-        <button
-          onClick={() => onFindNearestCamp(props)}
-          style={{
-            marginTop: 12, width: '100%', padding: '8px 10px', minHeight: 38,
-            background: 'rgba(99,153,34,0.18)', border: '1px solid rgba(99,153,34,0.4)',
-            borderRadius: 6, color: '#a3d669', fontSize: 11, fontWeight: 600,
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            fontFamily: 'inherit', transition: 'background 0.15s',
-          }}
-        >
-          🏕️ Route to Nearest Safe Shelter
-        </button>
-      )}
+      {/* Dispatch & Shelter Actions */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
+        {props.is_dispatched ? (
+          <div style={{
+            padding: '6px 8px', background: 'rgba(52, 211, 153, 0.15)',
+            border: '1px solid #34d399', borderRadius: 6, fontSize: 10, color: '#34d399',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+          }}>
+            <span>🚤 UNIT EN ROUTE: {props.dispatch_station || 'NDRF Base'}</span>
+            <strong>ETA {props.eta_minutes || 14}m</strong>
+          </div>
+        ) : onDispatchRescue ? (
+          <button
+            onClick={() => onDispatchRescue(props, 'ndrf-patgaon-guwahati', props.recommended_asset || 'NDRF Motorized Inflatable Boat')}
+            style={{
+              width: '100%', padding: '8px 10px', minHeight: 34,
+              background: 'linear-gradient(135deg, #00E5FF 0%, #0284c7 100%)', border: 'none',
+              borderRadius: 6, color: '#050a14', fontSize: 11, fontWeight: 800,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              fontFamily: 'inherit', boxShadow: '0 0 12px rgba(0, 229, 255, 0.35)'
+            }}
+          >
+            🚤 Dispatch {props.recommended_asset || 'Rescue Unit'}
+          </button>
+        ) : null}
+
+        {onFindNearestCamp && (
+          <button
+            onClick={() => onFindNearestCamp(props)}
+            style={{
+              width: '100%', padding: '7px 10px', minHeight: 32,
+              background: 'rgba(99,153,34,0.18)', border: '1px solid rgba(99,153,34,0.4)',
+              borderRadius: 6, color: '#a3d669', fontSize: 11, fontWeight: 600,
+              cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              fontFamily: 'inherit', transition: 'background 0.15s',
+            }}
+          >
+            🏕️ Route to Nearest Safe Shelter
+          </button>
+        )}
+      </div>
     </div>
   )
 }
 
-function QueuePanel({ queue, filter, onFindNearestCamp, overdueCases }) {
+function QueuePanel({ queue, filter, onFindNearestCamp, onDispatchRescue, overdueCases }) {
+  const { t } = useLang()
   const tiers = queue?.tiers ?? {}
   const f = filter.toLowerCase().trim()
 
@@ -434,7 +505,7 @@ function QueuePanel({ queue, filter, onFindNearestCamp, overdueCases }) {
 
   return (
     <>
-      <PanelHeader icon="📡" title="Live Priority Queue" subtitle={`${queue?.total_cases ?? 0} active cases`} />
+      <PanelHeader icon="📡" title={t('panel.queue_title')} subtitle={`${queue?.total_cases ?? 0} ${t('queue.cases')}`} />
       {['Tier 1', 'Tier 2', 'Tier 3'].map(tierKey => {
         const allCases = tiers[tierKey] ?? []
         const cases = filterCases(allCases)
@@ -480,7 +551,7 @@ function QueuePanel({ queue, filter, onFindNearestCamp, overdueCases }) {
                         const pill = getStatusPill(c.tier, isOverdue)
                         return (
                           <span className={`status-pill ${pill.cls}`}>
-                            {pill.label}
+                            {t(pill.labelKey).toUpperCase()}
                           </span>
                         )
                       })()}
@@ -519,18 +590,36 @@ function QueuePanel({ queue, filter, onFindNearestCamp, overdueCases }) {
                         <span style={{ color: 'var(--t2)', fontWeight: 500 }}>⚑ {c.vulnerability_flags.join(', ')}</span>
                       )}
                     </div>
-                    <button
-                      onClick={() => onFindNearestCamp?.({ ...c, is_overdue: isOverdue, overdue_hours: ov?.overdue_hours })}
-                      className="btn-primary"
-                      style={{
-                        width: '100%',
-                        padding: '6px 10px',
-                        minHeight: 28,
-                        fontSize: 10,
-                      }}
-                    >
-                      🏕️ Find Nearest Shelter ➔
-                    </button>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
+                      <button
+                        onClick={() => onFindNearestCamp?.({ ...c, is_overdue: isOverdue, overdue_hours: ov?.overdue_hours })}
+                        className="btn-primary"
+                        style={{
+                          padding: '6px 8px',
+                          minHeight: 28,
+                          fontSize: 10,
+                        }}
+                      >
+                        🏕️ Shelter ➔
+                      </button>
+                      <button
+                        onClick={() => onDispatchRescue?.(c, 'ndrf-patgaon-guwahati', c.recommended_asset || 'NDRF Motorized Boat')}
+                        style={{
+                          padding: '6px 8px',
+                          minHeight: 28,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          background: c.is_dispatched ? 'rgba(52, 211, 153, 0.15)' : 'rgba(0, 229, 255, 0.15)',
+                          border: c.is_dispatched ? '1px solid #34d399' : '1px solid var(--cyan)',
+                          color: c.is_dispatched ? '#34d399' : '#00E5FF',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        {c.is_dispatched ? '✓ Dispatched' : '🚤 Dispatch'}
+                      </button>
+                    </div>
                   </div>
                 )
               })
@@ -543,6 +632,7 @@ function QueuePanel({ queue, filter, onFindNearestCamp, overdueCases }) {
 }
 
 function InsightsPanel({ cases, onLocateCase }) {
+  const { t } = useLang()
   const worstHit = useMemo(() => {
     if (!cases) return []
     return [...cases].sort((a, b) => {
@@ -557,7 +647,7 @@ function InsightsPanel({ cases, onLocateCase }) {
 
   return (
     <>
-      <PanelHeader icon="🔥" title="Worst-Hit Locations" subtitle="Synthesized high-impact priority targets" />
+      <PanelHeader icon="🔥" title={t('sidebar.insights')} subtitle={t('panel.impact')} />
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {worstHit.map((item, idx) => {
@@ -584,14 +674,14 @@ function InsightsPanel({ cases, onLocateCase }) {
                     background: `${color}15`, color: color, fontWeight: 700, fontSize: 10,
                     padding: '2px 6px', borderRadius: 4, border: `1px solid ${color}33`,
                   }}>
-                    #{idx + 1} IMPACT
+                    #{idx + 1} {t('panel.impact')}
                   </span>
                   <span className="text-mono" style={{ fontSize: 11, fontWeight: 700, color: 'var(--t2)' }}>
                     🎯 {p.urgency_score}/5
                   </span>
                   {mergedCount > 1 && (
                     <span style={{ background: 'rgba(56,189,248,0.12)', color: 'var(--accent)', fontSize: 9, fontWeight: 700, padding: '2px 5px', borderRadius: 3 }}>
-                      🔗 {mergedCount} calls
+                      🔗 {mergedCount} {t('panel.calls')}
                     </span>
                   )}
                 </div>
@@ -605,7 +695,7 @@ function InsightsPanel({ cases, onLocateCase }) {
               </div>
 
               <div className="text-mono" style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'flex', gap: 10, marginBottom: 8 }}>
-                <span>👥 <strong>{p.victim_count}</strong> victims</span>
+                <span>👥 <strong>{p.victim_count}</strong> {t('panel.victims')}</span>
                 {p.vulnerability_flags?.length > 0 && (
                   <span style={{ color: 'var(--t2)', fontWeight: 500 }}>⚑ {p.vulnerability_flags.join(', ')}</span>
                 )}
@@ -618,7 +708,7 @@ function InsightsPanel({ cases, onLocateCase }) {
                   width: '100%', padding: '6px 0', minHeight: 28, fontSize: 10,
                 }}
               >
-                Locate Target on Map ➔
+                {t('panel.locate')}
               </button>
             </div>
           )
@@ -629,6 +719,7 @@ function InsightsPanel({ cases, onLocateCase }) {
 }
 
 function CampsPanel({ camps, queue, onFindRouteForCase, selectedRoute, onClearRoute, onHighlightCamp, hazardAlerts }) {
+  const { t } = useLang()
   const [tagFilter, setTagFilter] = useState('all')
   const [selectedCaseId, setSelectedCaseId] = useState('')
 
@@ -659,7 +750,7 @@ function CampsPanel({ camps, queue, onFindRouteForCase, selectedRoute, onClearRo
 
   return (
     <>
-      <PanelHeader icon="🏕" title="Relief Camps & Inventory" subtitle={`${camps?.length ?? 0} operational shelters in Assam`} />
+      <PanelHeader icon="🏕" title={t('panel.camps_title')} subtitle={`${camps?.length ?? 0} ${t('panel.camps_sub')}`} />
 
       {selectedRoute && (
         <div style={{
@@ -780,8 +871,8 @@ function CampsPanel({ camps, queue, onFindRouteForCase, selectedRoute, onClearRo
                 </div>
                 <div style={{ marginTop: 8, marginBottom: 6 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#94a3b8', marginBottom: 3 }}>
-                    <span>Occupancy</span>
-                    <span>{camp.current_occupancy} / {camp.capacity} beds ({pct}%)</span>
+                    <span>{t('map.occupancy')}</span>
+                    <span>{camp.current_occupancy} / {camp.capacity} {t('map.beds')} ({pct}%)</span>
                   </div>
                   <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${Math.min(pct, 100)}%`, background: statusColor }} />
@@ -806,6 +897,7 @@ function CampsPanel({ camps, queue, onFindRouteForCase, selectedRoute, onClearRo
 }
 
 function ReunificationPanel({ reports, onReportSubmitted, onResolveReport }) {
+  const { t } = useLang()
   const [reporterName, setReporterName] = useState('')
   const [reporterContact, setReporterContact] = useState('')
   const [missingName, setMissingName] = useState('')
@@ -976,8 +1068,53 @@ function ReunificationPanel({ reports, onReportSubmitted, onResolveReport }) {
   )
 }
 
+function HydrographChart({ history, dangerLevel, warningLevel, dischargeCusecs }) {
+  if (!history || history.length === 0) return null
+  const minVal = Math.min(...history, (warningLevel || history[0]) * 0.98)
+  const maxVal = Math.max(...history, (dangerLevel || history[history.length - 1]) * 1.02)
+  const range = maxVal - minVal || 1
+
+  const points = history.map((val, i) => {
+    const x = (i / (history.length - 1)) * 260 + 20
+    const y = 80 - ((val - minVal) / range) * 55 + 10
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  }).join(' ')
+
+  const dangerY = dangerLevel ? (80 - ((dangerLevel - minVal) / range) * 55 + 10) : null
+  const warningY = warningLevel ? (80 - ((warningLevel - minVal) / range) * 55 + 10) : null
+
+  return (
+    <div style={{ marginTop: 8, background: 'rgba(5, 10, 20, 0.75)', borderRadius: 6, padding: '8px 10px', border: '1px solid rgba(0, 229, 255, 0.18)' }}>
+      <div style={{ fontSize: 9, color: 'var(--cyan)', fontWeight: 700, marginBottom: 4, display: 'flex', justifyContent: 'space-between' }}>
+        <span>24H RIVER HYDROGRAPH (CWC TELEMETRY)</span>
+        {dischargeCusecs && <span style={{ color: '#94a3b8' }}>FLOW: {dischargeCusecs.toLocaleString()} cusecs</span>}
+      </div>
+      <svg width="100%" height="70" viewBox="0 0 300 90" style={{ overflow: 'visible' }}>
+        {warningY && <line x1="15" y1={warningY} x2="285" y2={warningY} stroke="#EF9F27" strokeDasharray="3 3" strokeWidth="1" />}
+        {dangerY && <line x1="15" y1={dangerY} x2="285" y2={dangerY} stroke="#E24B4A" strokeDasharray="3 3" strokeWidth="1" />}
+        <polyline points={points} fill="none" stroke="#00E5FF" strokeWidth="2.5" />
+        {history.length > 0 && (
+          <circle
+            cx={280}
+            cy={80 - ((history[history.length - 1] - minVal) / range) * 55 + 10}
+            r="4" fill="#00E5FF" stroke="#fff" strokeWidth="1.5"
+          />
+        )}
+      </svg>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8, color: 'var(--text-muted)', marginTop: 2 }}>
+        <span>-24h</span>
+        <span style={{ color: '#EF9F27' }}>-- Warning</span>
+        <span style={{ color: '#E24B4A' }}>-- Danger</span>
+        <span>Now</span>
+      </div>
+    </div>
+  )
+}
+
 function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToast, onHighlightStation }) {
+  const { t } = useLang()
   const [dispatchingRegion, setDispatchingRegion] = useState('')
+  const [expandedStation, setExpandedStation] = useState(null)
 
   const handleAlert = async (regionName) => {
     setDispatchingRegion(regionName)
@@ -1007,7 +1144,7 @@ function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToa
 
       {/* CWC RIVER GAUGE CARDS */}
       <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', marginBottom: 8 }}>
-        CWC RIVER MONITORING STATIONS ({riverGauges?.length ?? 0})
+        {t('panel.cwc_stations')} ({riverGauges?.length ?? 0})
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
@@ -1016,6 +1153,7 @@ function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToa
           const isWarning = g.current_level_m >= g.warning_level_m
           const color = isDanger ? '#E24B4A' : isWarning ? '#EF9F27' : '#639922'
           const pct = Math.min(100, Math.max(10, Math.round((g.current_level_m / (g.danger_level_m * 1.05)) * 100)))
+          const isExpanded = expandedStation === g.station_id
 
           return (
             <div
@@ -1034,22 +1172,30 @@ function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToa
                   background: `${color}22`, color: color, border: `1px solid ${color}44`,
                   fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
                 }}>
-                  {g.trend === 'rising' ? '↗ RISING' : g.trend === 'falling' ? '↘ FALLING' : '→ STABLE'}
+                  {g.trend === 'rising' ? t('panel.rising') : g.trend === 'falling' ? t('panel.falling') : t('panel.stable')}
                 </span>
               </div>
 
               <div style={{ marginTop: 8, marginBottom: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#94a3b8', marginBottom: 3 }}>
-                  <span>Level: <strong>{g.current_level_m}m</strong></span>
-                  <span>Danger: <strong>{g.danger_level_m}m</strong></span>
+                  <span>{t('map.level')}: <strong>{g.current_level_m}m</strong></span>
+                  <span>{t('map.danger')}: <strong>{g.danger_level_m}m</strong></span>
                 </div>
                 <div style={{ height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${pct}%`, background: color }} />
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 9, color: '#64748b' }}>
-                <span>Rate of rise: <strong style={{ color: g.rate_of_rise_cm_per_hour > 0 ? '#fca5a5' : '#94a3b8' }}>+{g.rate_of_rise_cm_per_hour} cm/h</strong></span>
+              {/* Hydrograph Chart */}
+              <HydrographChart
+                history={g.history_24h}
+                dangerLevel={g.danger_level_m}
+                warningLevel={g.warning_level_m}
+                dischargeCusecs={g.discharge_cusecs}
+              />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 9, color: '#64748b', marginTop: 8 }}>
+                <span>{t('map.rate_of_rise')}: <strong style={{ color: g.rate_of_rise_cm_per_hour > 0 ? '#fca5a5' : '#94a3b8' }}>+{g.rate_of_rise_cm_per_hour} cm/h</strong></span>
                 <button
                   onClick={() => onHighlightStation?.([g.lat, g.lng])}
                   style={{ background: 'none', border: 'none', color: '#38bdf8', cursor: 'pointer', padding: 0, textDecoration: 'underline', fontSize: 9 }}
@@ -1064,7 +1210,7 @@ function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToa
 
       {/* RANKED RISK PREDICTIONS */}
       <div style={{ fontSize: 10, fontWeight: 700, color: '#64748b', letterSpacing: '0.08em', marginBottom: 8 }}>
-        PREDICTED INUNDATION RISK MODEL
+        {t('panel.risk_model')}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1089,7 +1235,7 @@ function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToa
                   background: `${color}22`, color: color, border: `1px solid ${color}44`,
                   fontSize: 9, fontWeight: 700, padding: '1px 6px', borderRadius: 4, textTransform: 'uppercase',
                 }}>
-                  {p.predicted_flood_risk} RISK
+                  {p.predicted_flood_risk} {t('panel.risk')}
                 </span>
               </div>
 
@@ -1098,7 +1244,7 @@ function EarlyWarningPanel({ riverGauges, predictions, onDispatchAlert, alertToa
               </div>
 
               <div style={{ fontSize: 10, color: '#64748b', marginBottom: 8 }}>
-                IMD Rain Alert: <strong style={{ color: p.rainfall_alert === 'very_heavy' ? '#E24B4A' : '#f59e0b' }}>{p.rainfall_alert}</strong>
+                {t('panel.rain_alert')}: <strong style={{ color: p.rainfall_alert === 'very_heavy' ? '#E24B4A' : '#f59e0b' }}>{p.rainfall_alert}</strong>
               </div>
 
               <button
@@ -1165,15 +1311,19 @@ function btnStyle(active = false, accent = false) {
 
 // Derive a status pill label from case properties
 function getStatusPill(tier, isOverdue) {
-  if (isOverdue) return { label: 'OVERDUE', cls: 'status-overdue' }
-  if (tier === 'Tier 1') return { label: 'CRITICAL', cls: 'status-critical' }
-  if (tier === 'Tier 2') return { label: 'RESCUING', cls: 'status-rescuing' }
-  return { label: 'SAFE', cls: 'status-safe' }
+  // Use strings matching translation keys, or pass down translation function if needed, 
+  // but since it's a global we might need to handle it in rendering.
+  // Actually, we can return the translation key directly, or wait until render.
+  if (isOverdue) return { labelKey: 'queue.overdue', cls: 'status-overdue' }
+  if (tier === 'Tier 1') return { labelKey: 'tier.critical', cls: 'status-critical' }
+  if (tier === 'Tier 2') return { labelKey: 'tier.rescuing', cls: 'status-rescuing' }
+  return { labelKey: 'tier.safe', cls: 'status-safe' }
 }
 
 
 // ── Main MapView ───────────────────────────────────────────────────────────────
 export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
+  const { t } = useLang()
   const [mapData, setMapData]             = useState(null)
   const [queue,   setQueue]               = useState(null)
   const [campsData, setCampsData]         = useState(null)
@@ -1191,18 +1341,24 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
   const [fitTrigger, setFitTrigger]       = useState(0)
   const [mapCenter, setMapCenter]         = useState(null)
   const [selectedRoute, setSelectedRoute] = useState(null)
+  const [activeDispatchRoute, setActiveDispatchRoute] = useState(null)
+
+  // Modals & Sound FX
+  const [isDroneOpen, setIsDroneOpen]         = useState(false)
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false)
+  const [isAudioMuted, setIsAudioMuted]       = useState(() => audioFx.isMuted())
 
   // Mobile responsiveness state (<768px)
   const [isMobile, setIsMobile]           = useState(window.innerWidth < 768)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  const toggleAudio = useCallback(() => {
+    const nextMuted = !isAudioMuted
+    setIsAudioMuted(nextMuted)
+    audioFx.setMuted(nextMuted)
+    if (!nextMuted) audioFx.playTactile()
+    showToast(nextMuted ? '🔇 Tactical Audio Muted' : '🔊 Tactical Audio Active')
+  }, [isAudioMuted])
 
   const fetchAll = useCallback(async () => {
     setRefreshing(true)
@@ -1230,6 +1386,44 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
     } finally {
       setRefreshing(false)
     }
+  }, [])
+
+  const handleDispatchRescue = useCallback(async (caseObj, stationId, assetType) => {
+    try {
+      audioFx.playRadioDispatch()
+      const res = await fetch(`${API_BASE}/api/dispatch-rescue`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          case_id: caseObj.case_id,
+          station_id: stationId,
+          asset_type: assetType,
+          timestamp: new Date().toISOString()
+        })
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setActiveDispatchRoute({
+        waypoints: data.route_waypoints,
+        stationName: data.station.name,
+        assetType: assetType || data.station.type,
+        distanceKm: data.distance_km,
+        etaMinutes: data.eta_minutes,
+        caseLandmark: caseObj.gps_or_landmark
+      })
+      showToast(`🚤 Dispatched ${assetType || 'Rescue Boat'} from ${data.station.name}! ETA: ${data.eta_minutes} mins`)
+      fetchAll()
+    } catch (e) {
+      showToast(`⚠️ Dispatch error: ${e.message}`)
+    }
+  }, [fetchAll])
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   useEffect(() => {
@@ -1432,26 +1626,40 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         display: 'flex', alignItems: 'stretch',
         height: isMobile ? 54 : 62,
       }}>
-        {/* Logo */}
+        {/* Tactical Brand Emblem Logo */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
+          display: 'flex', alignItems: 'center', gap: 11,
           padding: '0 18px',
-          borderRight: '1px solid rgba(0,229,255,0.1)',
+          borderRight: '1px solid rgba(0,229,255,0.12)',
           flexShrink: 0,
         }}>
-          <motion.div
-            animate={{ opacity: [1, 0.3, 1] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            style={{
-              width: 8, height: 8, borderRadius: '50%',
-              background: '#00E5FF', boxShadow: '0 0 10px rgba(0,229,255,0.8)',
-            }}
-          />
+          <div style={{
+            position: 'relative', width: 34, height: 34,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.3) 100%)',
+            border: '1.5px solid rgba(0, 229, 255, 0.65)',
+            borderRadius: 8,
+            boxShadow: '0 0 16px rgba(0, 229, 255, 0.4), inset 0 0 8px rgba(0, 229, 255, 0.15)',
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L4 5.5V11.5C4 16.5 7.4 21.1 12 22.3C16.6 21.1 20 16.5 20 11.5V5.5L12 2Z"
+                stroke="#00E5FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="rgba(0, 229, 255, 0.12)" />
+              <path d="M7 13C8.5 11.8 10 14.2 12 13C14 11.8 15.5 14.2 17 13"
+                stroke="#38bdf8" strokeWidth="1.6" strokeLinecap="round" />
+              <path d="M7 16C8.5 14.8 10 17 12 16C14 14.8 15.5 17 17 16"
+                stroke="#00E5FF" strokeWidth="1.6" strokeLinecap="round" />
+              <circle cx="12" cy="7.5" r="1.8" fill="#00E5FF" />
+            </svg>
+          </div>
           <div>
-            <div style={{ color: '#00E5FF', fontSize: 13, fontWeight: 800, letterSpacing: '0.04em', lineHeight: 1 }}>
+            <div style={{
+              color: '#00E5FF', fontSize: 13, fontWeight: 900,
+              letterSpacing: '0.06em', lineHeight: 1.1,
+              textShadow: '0 0 10px rgba(0, 229, 255, 0.5)'
+            }}>
               SAHAYAK
             </div>
-            <div style={{ color: 'rgba(0,229,255,0.45)', fontSize: 8, fontWeight: 600, letterSpacing: '0.12em' }}>
+            <div style={{ color: 'rgba(0,229,255,0.5)', fontSize: 8, fontWeight: 700, letterSpacing: '0.12em' }}>
               FLOOD RESCUE COMMAND
             </div>
           </div>
@@ -1462,34 +1670,34 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           <div style={{ display: 'flex', flex: 1, alignItems: 'stretch' }}>
             {/* Active SOS */}
             <div className="metric-card">
-              <span className="metric-label">Active SOS Requests</span>
+              <span className="metric-label">{t('metric.sos_label')}</span>
               <span className={`metric-value live-value ${totalSOS > 5 ? 'alert' : ''}`}>
                 {totalSOS}
               </span>
-              <span className="metric-sub">across Assam districts</span>
+              <span className="metric-sub">{t('metric.sos_sub')}</span>
             </div>
 
             {/* People Trapped */}
             <div className="metric-card">
-              <span className="metric-label">People Trapped</span>
+              <span className="metric-label">{t('metric.trapped_label')}</span>
               <span className={`metric-value live-value ${totalTrapped > 20 ? 'alert' : 'warn'}`}>
                 {totalTrapped}
               </span>
-              <span className="metric-sub">estimated victims</span>
+              <span className="metric-sub">{t('metric.trapped_sub')}</span>
             </div>
 
             {/* Boats Deployed */}
             <div className="metric-card">
-              <span className="metric-label">Boats Deployed</span>
+              <span className="metric-label">{t('metric.boats_label')}</span>
               <span className="metric-value live-value">
                 {boatsDeployed}
               </span>
-              <span className="metric-sub">rescue assets active</span>
+              <span className="metric-sub">{t('metric.boats_sub')}</span>
             </div>
 
             {/* River Level */}
             <div className="metric-card">
-              <span className="metric-label">River Level Status</span>
+              <span className="metric-label">{t('metric.river_label')}</span>
               <span className={`metric-value ${
                 riverDangerPct == null ? '' :
                 riverDangerPct >= 95 ? 'alert' :
@@ -1498,9 +1706,9 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                 {riverDangerPct != null ? `${riverDangerPct}%` : '—'}
               </span>
               <span className="metric-sub">
-                {riverDangerPct == null ? 'loading gauges…' :
-                 riverDangerPct >= 95 ? '⚠ danger level reached' :
-                 riverDangerPct >= 75 ? 'approaching danger' : 'within safe range'}
+                {riverDangerPct == null ? t('metric.river_loading') :
+                 riverDangerPct >= 95 ? t('metric.river_danger') :
+                 riverDangerPct >= 75 ? t('metric.river_approach') : t('metric.river_safe')}
               </span>
             </div>
           </div>
@@ -1527,6 +1735,52 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           <span style={{ color: '#555f70', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}>
             {lastUpdated ? fmtTime(lastUpdated) : '——:——'}
           </span>
+          {/* Tactical Action Trays: SOS Simulator, Drone Recon, Audio */}
+          <motion.button
+            onClick={() => { audioFx.playTactile(); setIsSimulatorOpen(true) }}
+            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            title="Voice SOS Intake & Live Surge Simulator"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.25) 100%)',
+              border: '1px solid var(--cyan)', borderRadius: 7, padding: '5px 10px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              color: 'var(--cyan)', fontSize: 11, fontWeight: 700,
+            }}
+          >
+            <span>🎙️</span>
+            {!isMobile && <span>Voice SOS / Surge</span>}
+          </motion.button>
+
+          <motion.button
+            onClick={() => { audioFx.playTactile(); setIsDroneOpen(true) }}
+            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+            title="UAV Thermal Drone Reconnaissance"
+            style={{
+              background: 'linear-gradient(135deg, rgba(226, 75, 74, 0.15) 0%, rgba(185, 28, 28, 0.25) 100%)',
+              border: '1px solid #E24B4A', borderRadius: 7, padding: '5px 10px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              color: '#fca5a5', fontSize: 11, fontWeight: 700,
+            }}
+          >
+            <span>🛰️</span>
+            {!isMobile && <span>Drone Recon</span>}
+          </motion.button>
+
+          <motion.button
+            onClick={toggleAudio}
+            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
+            title={isAudioMuted ? "Unmute Tactical Sound FX" : "Mute Tactical Sound FX"}
+            style={{
+              background: isAudioMuted ? 'rgba(255,255,255,0.04)' : 'rgba(0,229,255,0.1)',
+              border: `1px solid ${isAudioMuted ? 'rgba(255,255,255,0.1)' : 'rgba(0,229,255,0.3)'}`,
+              borderRadius: 7, width: 28, height: 28, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: isAudioMuted ? '#64748b' : '#00E5FF', fontSize: 13,
+            }}
+          >
+            {isAudioMuted ? '🔇' : '🔊'}
+          </motion.button>
+
           <motion.button
             onClick={fetchAll} disabled={refreshing}
             whileHover={refreshing ? {} : { scale: 1.1 }} whileTap={refreshing ? {} : { scale: 0.92 }}
@@ -1551,6 +1805,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           >
             ⊕
           </motion.button>
+          <LanguageSwitcher style={{ marginRight: 4 }} />
           {isMobile && (
             <motion.button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -1636,6 +1891,60 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           </Polyline>
         )}
 
+        {/* RESCUE ASSET BASES */}
+        {(mapData?.rescue_stations ?? []).map(station => (
+          <Marker
+            key={station.station_id}
+            position={[station.lat, station.lng]}
+            icon={makeStationIcon(station.agency)}
+          >
+            <Tooltip direction="top" offset={[0, -16]} className="Sahayak-tooltip">
+              <div style={{ fontFamily: "'Inter','Segoe UI',sans-serif", fontSize: 11 }}>
+                <strong style={{ color: station.agency === 'IAF' ? '#a78bfa' : '#38bdf8' }}>{station.agency}</strong> · {station.name}
+                <br /><span style={{ color: '#94a3b8' }}>Freq: {station.contact_freq}</span>
+              </div>
+            </Tooltip>
+            <Popup offset={[0, -16]} className="Sahayak-popup" closeButton={false}>
+              <div style={{
+                background: '#0f172a', color: '#e2e8f0', borderRadius: 10, padding: '12px 14px',
+                minWidth: 230, fontSize: 12, border: '1px solid rgba(0, 229, 255, 0.4)',
+                fontFamily: "'Inter','Segoe UI',sans-serif"
+              }}>
+                <div style={{ color: 'var(--cyan)', fontWeight: 700, fontSize: 10, marginBottom: 4 }}>
+                  🛡️ RESCUE ASSET DEPLOYMENT BASE
+                </div>
+                <div style={{ fontWeight: 700, color: '#f1f5f9', marginBottom: 2 }}>{station.name}</div>
+                <div style={{ fontSize: 10, color: '#94a3b8', marginBottom: 8 }}>{station.type} · {station.contact_freq}</div>
+                <div style={{ fontSize: 11, color: '#e2e8f0', marginBottom: 4 }}>
+                  ⚡ Readied Assets:
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 10, color: '#cbd5e1' }}>
+                  {Object.entries(station.assets_available || {}).map(([k, v]) => (
+                    <div key={k} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>{k.replace(/_/g, ' ')}:</span>
+                      <strong style={{ color: 'var(--cyan)' }}>{v}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+
+        {/* ACTIVE DISPATCH VECTOR ROUTE */}
+        {activeDispatchRoute && (
+          <Polyline
+            positions={activeDispatchRoute.waypoints}
+            pathOptions={{ color: '#00E5FF', weight: 4, opacity: 0.95, className: 'dispatch-route-active' }}
+          >
+            <Tooltip permanent sticky direction="center" className="Sahayak-tooltip">
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#00E5FF' }}>
+                🚤 {activeDispatchRoute.assetType} en route to {activeDispatchRoute.caseLandmark} (ETA {activeDispatchRoute.etaMinutes}m)
+              </div>
+            </Tooltip>
+          </Polyline>
+        )}
+
         {/* CWC RIVER GAUGE MARKERS */}
         {riverGauges.map(g => {
           const isDanger = g.current_level_m >= g.danger_level_m
@@ -1651,8 +1960,8 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             >
               <Tooltip direction="top" offset={[0, -14]} className="Sahayak-tooltip">
                 <div style={{ fontFamily: "'Inter','Segoe UI',sans-serif", fontSize: 11 }}>
-                  🌊 <strong>CWC Gauge: {g.station_name}</strong>
-                  <br />Level: {g.current_level_m}m (Danger: {g.danger_level_m}m)
+                  🌊 <strong>{t('map.cwc_gauge')}: {g.station_name}</strong>
+                  <br />{t('map.level')}: {g.current_level_m}m ({t('map.danger')}: {g.danger_level_m}m)
                 </div>
               </Tooltip>
               <Popup offset={[0, -14]} className="Sahayak-popup" closeButton={false}>
@@ -1662,14 +1971,14 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                   fontFamily: "'Inter','Segoe UI',sans-serif",
                 }}>
                   <div style={{ color: RISK_COLOR[risk], fontWeight: 700, fontSize: 10, marginBottom: 4 }}>
-                    🌊 CWC RIVER MONITORING STATION
+                    🌊 {t('map.cwc_station')}
                   </div>
                   <div style={{ fontWeight: 600, color: '#f1f5f9', marginBottom: 2 }}>{g.station_name}</div>
                   <div style={{ fontSize: 10, color: '#64748b', marginBottom: 6 }}>{g.river_name} · {g.district}</div>
-                  <div style={{ fontSize: 11, color: '#e2e8f0' }}>Current Level: <strong>{g.current_level_m}m</strong></div>
-                  <div style={{ fontSize: 11, color: '#94a3b8' }}>Danger Level: <strong>{g.danger_level_m}m</strong></div>
+                  <div style={{ fontSize: 11, color: '#e2e8f0' }}>{t('map.current_level')}: <strong>{g.current_level_m}m</strong></div>
+                  <div style={{ fontSize: 11, color: '#94a3b8' }}>{t('map.danger_level')}: <strong>{g.danger_level_m}m</strong></div>
                   <div style={{ fontSize: 11, color: g.rate_of_rise_cm_per_hour > 0 ? '#fca5a5' : '#a3d669', marginTop: 4 }}>
-                    Trend: {g.trend} (+{g.rate_of_rise_cm_per_hour} cm/h)
+                    {t('map.trend')}: {g.trend} (+{g.rate_of_rise_cm_per_hour} cm/h)
                   </div>
                 </div>
               </Popup>
@@ -1691,12 +2000,12 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             >
               <Tooltip direction="top" offset={[0, -16]} className="Sahayak-tooltip">
                 <div style={{ fontFamily: "'Inter','Segoe UI',sans-serif", fontSize: 11 }}>
-                  {hasHazard && <span style={{ color: '#EF9F27', fontWeight: 700, marginRight: 4 }}>⚠️ HAZARD</span>}
+                  {hasHazard && <span style={{ color: '#EF9F27', fontWeight: 700, marginRight: 4 }}>⚠️ {t('map.hazard')}</span>}
                   <span style={{
                     display: 'inline-block', background: statusColor, color: '#fff',
                     fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 3, marginRight: 5,
                   }}>
-                    CAMP: {camp.status}
+                    {t('map.camp')}: {camp.status}
                   </span>
                   {camp.name}
                 </div>
@@ -1723,7 +2032,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                       background: statusColor, color: '#fff', fontSize: 10, fontWeight: 700,
                       padding: '2px 8px', borderRadius: 4, letterSpacing: '0.06em',
                     }}>
-                      RELIEF CAMP
+                      {t('map.relief_camp')}
                     </span>
                     <span style={{ color: statusColor, fontSize: 11, fontWeight: 700 }}>
                       {camp.status}
@@ -1736,7 +2045,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                     {camp.district} District
                   </div>
                   <div style={{ fontSize: 11, color: '#e2e8f0', marginBottom: 4 }}>
-                    Occupancy: {camp.current_occupancy} / {camp.capacity} beds ({camp.occupancy_pct}%)
+                    {t('map.occupancy')}: {camp.current_occupancy} / {camp.capacity} {t('map.beds')} ({camp.occupancy_pct}%)
                   </div>
                   <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden', marginBottom: 8 }}>
                     <div style={{ height: '100%', width: `${Math.min(camp.occupancy_pct, 100)}%`, background: statusColor }} />
@@ -1772,17 +2081,17 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             >
               <Tooltip direction="top" offset={[0, -sz / 2 - 4]} opacity={1} className="Sahayak-tooltip">
                 <div style={{ fontFamily: "'Inter','Segoe UI',sans-serif", fontSize: 11 }}>
-                  {isOverdue && <span style={{ color: '#E24B4A', fontWeight: 700, marginRight: 4 }}>🚨 OVERDUE</span>}
-                  {mergedCount > 1 && <span style={{ color: '#38bdf8', fontWeight: 700, marginRight: 4 }}>🔗 {mergedCount} REPS</span>}
+                  {isOverdue && <span style={{ color: '#E24B4A', fontWeight: 700, marginRight: 4 }}>🚨 {t('map.overdue')}</span>}
+                  {mergedCount > 1 && <span style={{ color: '#38bdf8', fontWeight: 700, marginRight: 4 }}>🔗 {mergedCount} {t('map.reps')}</span>}
                   <span style={{
                     display: 'inline-block',
                     background: TIER[props.tier]?.color ?? '#E24B4A', color: '#fff',
                     fontSize: 9, fontWeight: 700, padding: '1px 5px',
                     borderRadius: 3, marginRight: 5, letterSpacing: '0.05em',
                   }}>
-                    {props.tier}
+                    {props.tier === 'Tier 1' ? t('tier.t1') : props.tier === 'Tier 2' ? t('tier.t2') : t('tier.t3')}
                   </span>
-                  {props.gps_or_landmark} ({victimCount} victims)
+                  {props.gps_or_landmark} ({victimCount} {t('panel.victims')})
                 </div>
               </Tooltip>
 
@@ -1790,6 +2099,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                 <CasePopupContent
                   props={{ ...props, is_overdue: isOverdue, overdue_hours: ov?.overdue_hours }}
                   onFindNearestCamp={handleFindNearestCamp}
+                  onDispatchRescue={handleDispatchRescue}
                 />
               </Popup>
             </Marker>
@@ -1814,7 +2124,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           {/* Heading */}
           <div style={{ padding: '18px 20px 10px' }}>
             <div style={{ fontSize: 13, color: '#00E5FF', fontWeight: 700, letterSpacing: '0.08em' }}>
-              MISSION CONTROL
+              {t('sidebar.title')}
             </div>
           </div>
 
@@ -1828,7 +2138,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             <span style={{ color: '#00E5FF', fontSize: 12, opacity: 0.7 }}>🔍</span>
             <input
               type="text"
-              placeholder="Filter location / tier…"
+              placeholder={t('sidebar.filter')}
               value={filter}
               onChange={e => setFilter(e.target.value)}
               style={{
@@ -1846,11 +2156,11 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           </div>
 
           {/* RESPONSE group */}
-          <SidebarGroupLabel>RESPONSE</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.grp_response')}</SidebarGroupLabel>
           {[
-            { key: null,       icon: '🗺️', label: 'Tactical Map' },
-            { key: 'queue',    icon: '🆘', label: 'Priority Queue' },
-            { key: 'insights', icon: '🔥', label: 'Worst-Hit Ranking' },
+            { key: null,       icon: '🗺️', label: t('sidebar.tactical_map') },
+            { key: 'queue',    icon: '🆘', label: t('sidebar.queue') },
+            { key: 'insights', icon: '🔥', label: t('sidebar.insights') },
           ].map(btn => (
             <SidebarRow key={btn.label} active={btn.key !== null && panel === btn.key || (btn.key === null && panel === null)} onClick={() => handlePanelBtn(btn.key)}>
               <span style={{ fontSize: 16 }}>{btn.icon}</span> {btn.label}
@@ -1858,10 +2168,10 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           ))}
 
           {/* RESOURCES group */}
-          <SidebarGroupLabel>RESOURCES</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.grp_resources')}</SidebarGroupLabel>
           {[
-            { key: 'camps',         icon: '🏕️', label: 'Relief Camps' },
-            { key: 'reunification', icon: '👨‍👩‍👧', label: 'Missing Persons' },
+            { key: 'camps',         icon: '🏕️', label: t('sidebar.camps') },
+            { key: 'reunification', icon: '👨‍👩‍👧', label: t('sidebar.missing') },
           ].map(btn => (
             <SidebarRow key={btn.label} active={panel === btn.key} onClick={() => handlePanelBtn(btn.key)}>
               <span style={{ fontSize: 16 }}>{btn.icon}</span> {btn.label}
@@ -1869,21 +2179,21 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           ))}
 
           {/* INTELLIGENCE group */}
-          <SidebarGroupLabel>INTELLIGENCE</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.grp_intel')}</SidebarGroupLabel>
           <SidebarRow active={panel === 'early_warning'} onClick={() => handlePanelBtn('early_warning')}>
-            <span style={{ fontSize: 16 }}>🌊</span> Early Warning
+            <span style={{ fontSize: 16 }}>🌊</span> {t('sidebar.early_warning')}
           </SidebarRow>
 
           {/* MODULES group */}
-          <SidebarGroupLabel>MODULES</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.grp_modules')}</SidebarGroupLabel>
           <SidebarRow onClick={onOpenTele}>
-            <span style={{ fontSize: 16 }}>📞</span> Health Bridge
+            <span style={{ fontSize: 16 }}>📞</span> {t('sidebar.health_bridge')}
           </SidebarRow>
           <SidebarRow onClick={onOpenAudit}>
-            <span style={{ fontSize: 16 }}>📜</span> Audit Log
+            <span style={{ fontSize: 16 }}>📜</span> {t('sidebar.audit_log')}
           </SidebarRow>
           <SidebarRow onClick={onOpenField}>
-            <span style={{ fontSize: 16 }}>👷</span> Field Portal
+            <span style={{ fontSize: 16 }}>👷</span> {t('sidebar.field_portal')}
           </SidebarRow>
 
           <div style={{ flex: 1 }} />
@@ -1907,12 +2217,12 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             }}
           >
             {[
-              { key: 'queue',         icon: '📡', label: 'Queue' },
-              { key: 'insights',      icon: '🔥', label: 'Worst Hit' },
-              { key: 'camps',         icon: '🏕', label: 'Camps' },
-              { key: 'reunification', icon: '🔍', label: 'Missing' },
-              { key: 'early_warning', icon: '⚡', label: 'Warning' },
-              { key: null,            icon: '🗺', label: 'Map only' },
+              { key: 'queue',         icon: '📡', label: t('sidebar.queue') },
+              { key: 'insights',      icon: '🔥', label: t('mobile.worst_hit') },
+              { key: 'camps',         icon: '🏕', label: t('sidebar.camps') },
+              { key: 'reunification', icon: '🔍', label: t('mobile.missing') },
+              { key: 'early_warning', icon: '⚡', label: t('mobile.warning') },
+              { key: null,            icon: '🗺', label: t('mobile.map_only') },
             ].map(btn => (
               <button
                 key={btn.label}
@@ -1927,13 +2237,13 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             <div style={{ gridColumn: 'span 2', height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
 
             <button onClick={() => { onOpenTele(); setMobileMenuOpen(false) }} style={btnStyle(false, true)}>
-              <span>📞</span> Tele-health
+              <span>📞</span> {t('mobile.tele')}
             </button>
             <button onClick={() => { onOpenAudit(); setMobileMenuOpen(false) }} style={btnStyle(false, true)}>
-              <span>📜</span> System Audit
+              <span>📜</span> {t('mobile.audit')}
             </button>
             <button onClick={() => { onOpenField(); setMobileMenuOpen(false) }} style={{ ...btnStyle(false, true), gridColumn: 'span 2' }}>
-              <span>👷</span> Field Portal (Offline)
+              <span>👷</span> {t('mobile.field')}
             </button>
           </motion.div>
         )}
@@ -1969,10 +2279,10 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           {/* Icon legend */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {[
-              { icon: '🌊', color: '#93c5fd', label: 'CWC River Gauge' },
+              { icon: '🌊', color: '#93c5fd', label: t('map.cwc_gauge') },
               { icon: '🚨', color: '#FF3B30',  label: 'Overdue Alert'   },
               { icon: '🔗', color: '#00E5FF',  label: 'SOS Cluster'     },
-              { icon: '⚠️', color: '#fcd34d',  label: 'Health Hazard'   },
+              { icon: '⚠️', color: '#fcd34d',  label: t('map.hazard')   },
             ].map(item => (
               <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
                 <span style={{ fontSize: 11, lineHeight: 1 }}>{item.icon}</span>
@@ -1984,9 +2294,9 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           {/* Status pills */}
           <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '10px 0 8px' }} />
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-            <span className="status-pill status-critical">CRITICAL</span>
-            <span className="status-pill status-rescuing">RESCUING</span>
-            <span className="status-pill status-safe">SAFE</span>
+            <span className="status-pill status-critical">{t('tier.critical').toUpperCase()}</span>
+            <span className="status-pill status-rescuing">{t('tier.rescuing').toUpperCase()}</span>
+            <span className="status-pill status-safe">{t('tier.safe').toUpperCase()}</span>
           </div>
         </div>
       )}
@@ -2020,6 +2330,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                   queue={queue}
                   filter={filter}
                   onFindNearestCamp={handleFindNearestCamp}
+                  onDispatchRescue={handleDispatchRescue}
                   overdueCases={auditSummary?.overdue_cases}
                 />
               )}
@@ -2060,6 +2371,20 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* UAV Drone Reconnaissance Modal */}
+      <DroneReconModal
+        isOpen={isDroneOpen}
+        onClose={() => setIsDroneOpen(false)}
+        onInjectCase={() => fetchAll()}
+      />
+
+      {/* Multilingual Voice SOS & Surge Simulator Modal */}
+      <LiveIncidentSimulator
+        isOpen={isSimulatorOpen}
+        onClose={() => setIsSimulatorOpen(false)}
+        onCaseProcessed={() => fetchAll()}
+      />
     </div>
   )
 }

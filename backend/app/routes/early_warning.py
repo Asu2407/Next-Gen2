@@ -24,8 +24,11 @@ MOCK_RIVER_GAUGES = [
         "current_level_m": 20.45,
         "warning_level_m": 19.80,
         "danger_level_m": 19.83,
+        "highest_flood_level_m": 21.98,
+        "discharge_cusecs": 14200,
         "trend": "rising",
-        "rate_of_rise_cm_per_hour": 14.5
+        "rate_of_rise_cm_per_hour": 14.5,
+        "history_24h": [18.90, 19.10, 19.25, 19.45, 19.70, 19.95, 20.15, 20.30, 20.45]
     },
     {
         "station_id": "cwc-barpeta-manas",
@@ -37,8 +40,11 @@ MOCK_RIVER_GAUGES = [
         "current_level_m": 46.10,
         "warning_level_m": 44.50,
         "danger_level_m": 45.00,
+        "highest_flood_level_m": 47.30,
+        "discharge_cusecs": 28900,
         "trend": "rising",
-        "rate_of_rise_cm_per_hour": 11.2
+        "rate_of_rise_cm_per_hour": 11.2,
+        "history_24h": [44.80, 45.05, 45.30, 45.55, 45.75, 45.90, 46.00, 46.05, 46.10]
     },
     {
         "station_id": "cwc-dibrugarh-brahmaputra",
@@ -50,8 +56,43 @@ MOCK_RIVER_GAUGES = [
         "current_level_m": 105.85,
         "warning_level_m": 104.50,
         "danger_level_m": 105.70,
+        "highest_flood_level_m": 106.48,
+        "discharge_cusecs": 52400,
         "trend": "rising",
-        "rate_of_rise_cm_per_hour": 8.0
+        "rate_of_rise_cm_per_hour": 8.0,
+        "history_24h": [104.90, 105.10, 105.25, 105.40, 105.55, 105.65, 105.75, 105.80, 105.85]
+    },
+    {
+        "station_id": "cwc-majuli-kamalabari",
+        "station_name": "Majuli Kamalabari Ghat",
+        "river_name": "Brahmaputra River",
+        "district": "Majuli",
+        "lat": 26.935,
+        "lng": 94.180,
+        "current_level_m": 86.40,
+        "warning_level_m": 85.20,
+        "danger_level_m": 85.90,
+        "highest_flood_level_m": 87.15,
+        "discharge_cusecs": 48100,
+        "trend": "rising",
+        "rate_of_rise_cm_per_hour": 9.4,
+        "history_24h": [85.10, 85.35, 85.60, 85.80, 86.00, 86.15, 86.25, 86.35, 86.40]
+    },
+    {
+        "station_id": "cwc-dhubri-brahmaputra",
+        "station_name": "Dhubri Port Station",
+        "river_name": "Brahmaputra River",
+        "district": "Dhubri",
+        "lat": 26.020,
+        "lng": 89.980,
+        "current_level_m": 29.80,
+        "warning_level_m": 28.62,
+        "danger_level_m": 29.27,
+        "highest_flood_level_m": 30.52,
+        "discharge_cusecs": 61200,
+        "trend": "rising",
+        "rate_of_rise_cm_per_hour": 7.8,
+        "history_24h": [28.75, 28.95, 29.15, 29.35, 29.50, 29.62, 29.70, 29.75, 29.80]
     },
     {
         "station_id": "cwc-tezpur-jiabharali",
@@ -63,8 +104,11 @@ MOCK_RIVER_GAUGES = [
         "current_level_m": 64.90,
         "warning_level_m": 64.00,
         "danger_level_m": 65.20,
+        "highest_flood_level_m": 66.10,
+        "discharge_cusecs": 21800,
         "trend": "stable",
-        "rate_of_rise_cm_per_hour": 2.0
+        "rate_of_rise_cm_per_hour": 2.0,
+        "history_24h": [64.60, 64.70, 64.75, 64.80, 64.85, 64.88, 64.90, 64.90, 64.90]
     },
     {
         "station_id": "cwc-guwahati-brahmaputra",
@@ -76,8 +120,11 @@ MOCK_RIVER_GAUGES = [
         "current_level_m": 48.90,
         "warning_level_m": 48.68,
         "danger_level_m": 49.68,
+        "highest_flood_level_m": 51.46,
+        "discharge_cusecs": 44300,
         "trend": "rising",
-        "rate_of_rise_cm_per_hour": 5.5
+        "rate_of_rise_cm_per_hour": 5.5,
+        "history_24h": [48.10, 48.25, 48.40, 48.55, 48.68, 48.75, 48.82, 48.87, 48.90]
     },
     {
         "station_id": "cwc-nagaon-kopili",
@@ -89,8 +136,11 @@ MOCK_RIVER_GAUGES = [
         "current_level_m": 59.80,
         "warning_level_m": 59.00,
         "danger_level_m": 60.50,
+        "highest_flood_level_m": 61.79,
+        "discharge_cusecs": 18500,
         "trend": "falling",
-        "rate_of_rise_cm_per_hour": -3.0
+        "rate_of_rise_cm_per_hour": -3.0,
+        "history_24h": [60.40, 60.30, 60.20, 60.10, 60.00, 59.95, 59.90, 59.85, 59.80]
     }
 ]
 

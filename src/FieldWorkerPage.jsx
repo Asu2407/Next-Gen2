@@ -15,10 +15,13 @@ import {
   getUnsyncedFieldRecords,
   markRecordSynced,
 } from './utils/fieldDb'
+import { useLang } from './i18n/LangContext'
+import LanguageSwitcher from './components/LanguageSwitcher'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // set VITE_API_BASE_URL when deployed; empty string uses the Vite dev proxy → localhost:8000
 
 export default function FieldWorkerPage({ onBack }) {
+  const { t } = useLang()
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [activeFormTab, setActiveFormTab] = useState('rescue')
   const [records, setRecords] = useState([])
@@ -209,10 +212,10 @@ export default function FieldWorkerPage({ onBack }) {
               borderRadius: 8, color: '#e2e8f0', padding: '6px 14px', cursor: 'pointer', fontSize: 13,
             }}
           >
-            ← Back to Map
+            {t('btn.back')}
           </button>
           <div>
-            <h2 style={{ margin: 0, fontSize: 18, color: '#f1f5f9' }}>👷 Field Worker Offline Portal</h2>
+            <h2 style={{ margin: 0, fontSize: 18, color: '#f1f5f9' }}>👷 {t('field.title')}</h2>
             <div style={{ fontSize: 11, color: '#64748b' }}>Local-First IndexedDB Capture Engine</div>
           </div>
         </div>
@@ -234,7 +237,7 @@ export default function FieldWorkerPage({ onBack }) {
                 background: isOnline ? '#639922' : '#EF9F27',
               }}
             />
-            {isOnline ? 'ONLINE' : `OFFLINE — ${unsyncedCount} RECORDS QUEUED`}
+            {isOnline ? t('field.online') : `${t('field.offline')} — ${unsyncedCount} ${t('field.unsynced')}`}
           </div>
 
           <button
@@ -246,8 +249,9 @@ export default function FieldWorkerPage({ onBack }) {
               padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: isOnline && unsyncedCount > 0 ? 'pointer' : 'default',
             }}
           >
-            {syncing ? 'Syncing…' : `Sync Now (${unsyncedCount}) ↻`}
+            {syncing ? t('field.syncing') : `${t('field.sync')} (${unsyncedCount}) ↻`}
           </button>
+          <LanguageSwitcher />
         </div>
       </div>
 

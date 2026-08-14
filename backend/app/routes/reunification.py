@@ -15,62 +15,20 @@ router = APIRouter(prefix="/api/missing-persons", tags=["Reunification"])
 
 # ── Mock Camp Check-in Dataset ──────────────────────────────────────────────────
 CAMP_CHECKINS = [
-    {
-        "checkin_id": "chk-001",
-        "person_name": "Rahul Borthakur",
-        "age": 28,
-        "camp_id": "camp-001",
-        "camp_name": "Silchar Stadium Relief Shelter",
-        "check_in_time": "2026-08-03T08:30:00Z"
-    },
-    {
-        "checkin_id": "chk-002",
-        "person_name": "Sunita Gogoi",
-        "age": 34,
-        "camp_id": "camp-002",
-        "camp_name": "Barpeta High School Relief Center",
-        "check_in_time": "2026-08-03T09:15:00Z"
-    },
-    {
-        "checkin_id": "chk-003",
-        "person_name": "Anupam Hazarika",
-        "age": 45,
-        "camp_id": "camp-003",
-        "camp_name": "Tezpur District Shelter Center",
-        "check_in_time": "2026-08-03T10:00:00Z"
-    },
-    {
-        "checkin_id": "chk-004",
-        "person_name": "Bikash Choudhury",
-        "age": 52,
-        "camp_id": "camp-004",
-        "camp_name": "Dibrugarh Flood Relief Hub",
-        "check_in_time": "2026-08-03T10:45:00Z"
-    },
-    {
-        "checkin_id": "chk-005",
-        "person_name": "Rina Das",
-        "age": 22,
-        "camp_id": "camp-005",
-        "camp_name": "Nagaon Community Shelter",
-        "check_in_time": "2026-08-03T11:10:00Z"
-    },
-    {
-        "checkin_id": "chk-006",
-        "person_name": "Amitabh Saikia",
-        "age": 61,
-        "camp_id": "camp-006",
-        "camp_name": "Guwahati West Secondary School",
-        "check_in_time": "2026-08-03T11:30:00Z"
-    },
-    {
-        "checkin_id": "chk-007",
-        "person_name": "Meera Baruah",
-        "age": 19,
-        "camp_id": "camp-001",
-        "camp_name": "Silchar Stadium Relief Shelter",
-        "check_in_time": "2026-08-03T12:00:00Z"
-    }
+    {"checkin_id": "chk-001", "person_name": "Rahul Borthakur", "age": 28, "camp_id": "camp-001", "camp_name": "Silchar SA Road Stadium Relief Shelter", "check_in_time": "2026-08-03T08:30:00Z"},
+    {"checkin_id": "chk-002", "person_name": "Sunita Gogoi", "age": 34, "camp_id": "camp-002", "camp_name": "Barpeta Sarat Chandra High School Relief Centre", "check_in_time": "2026-08-03T09:15:00Z"},
+    {"checkin_id": "chk-003", "person_name": "Anupam Hazarika", "age": 45, "camp_id": "camp-003", "camp_name": "Tezpur College Ground Flood Shelter (ASDMA)", "check_in_time": "2026-08-03T10:00:00Z"},
+    {"checkin_id": "chk-004", "person_name": "Bikash Choudhury", "age": 52, "camp_id": "camp-004", "camp_name": "Dibrugarh Rajiv Bhavan Community Relief Hub", "check_in_time": "2026-08-03T10:45:00Z"},
+    {"checkin_id": "chk-005", "person_name": "Rina Das", "age": 22, "camp_id": "camp-005", "camp_name": "Nagaon Haibargaon Community Shelter", "check_in_time": "2026-08-03T11:10:00Z"},
+    {"checkin_id": "chk-006", "person_name": "Amitabh Saikia", "age": 61, "camp_id": "camp-006", "camp_name": "Guwahati GMCH Sports Ground Flood Camp", "check_in_time": "2026-08-03T11:30:00Z"},
+    {"checkin_id": "chk-007", "person_name": "Meera Baruah", "age": 19, "camp_id": "camp-001", "camp_name": "Silchar SA Road Stadium Relief Shelter", "check_in_time": "2026-08-03T12:00:00Z"},
+    {"checkin_id": "chk-008", "person_name": "Pranjal Deka", "age": 38, "camp_id": "camp-003", "camp_name": "Tezpur College Ground Flood Shelter (ASDMA)", "check_in_time": "2026-08-03T07:30:00Z"},
+    {"checkin_id": "chk-009", "person_name": "Dipika Konwar", "age": 29, "camp_id": "camp-007", "camp_name": "Dhubri DC Office Flood Relief Camp", "check_in_time": "2026-08-03T13:00:00Z"},
+    {"checkin_id": "chk-010", "person_name": "Raju Ahmed", "age": 44, "camp_id": "camp-007", "camp_name": "Dhubri DC Office Flood Relief Camp", "check_in_time": "2026-08-03T13:30:00Z"},
+    {"checkin_id": "chk-011", "person_name": "Lata Boro", "age": 55, "camp_id": "camp-008", "camp_name": "Goalpara Lakhipur College Relief Camp", "check_in_time": "2026-08-03T14:00:00Z"},
+    {"checkin_id": "chk-012", "person_name": "Debojit Nath", "age": 33, "camp_id": "camp-009", "camp_name": "Hojai Lanka SDMC Relief Shelter", "check_in_time": "2026-08-03T14:20:00Z"},
+    {"checkin_id": "chk-013", "person_name": "Mousumi Kalita", "age": 26, "camp_id": "camp-002", "camp_name": "Barpeta Sarat Chandra High School Relief Centre", "check_in_time": "2026-08-03T15:00:00Z"},
+    {"checkin_id": "chk-014", "person_name": "Hiren Medhi", "age": 48, "camp_id": "camp-010", "camp_name": "Chirang Bijni Govt. HS School Relief Camp", "check_in_time": "2026-08-03T15:45:00Z"}
 ]
 
 # ── Fuzzy Matching Function ─────────────────────────────────────────────────────
@@ -111,41 +69,31 @@ INITIAL_REPORTS = [
         "reporter_name": "Priya Borthakur",
         "reporter_contact": "+91 98640 12345",
         "missing_person_name": "Rahul Borthakur",
-        "last_known_location": "Silchar Ward 5, near main market",
+        "last_known_location": "Silchar Ward 5, near Annapurna Ghat main market",
         "last_seen_time": "2026-08-03T06:30:00Z",
         "photo_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
         "status": "Possible Match",
         "created_at": "2026-08-03T09:00:00Z",
-        "match_details": {
-            "matched_person_name": "Rahul Borthakur",
-            "matched_camp_id": "camp-001",
-            "matched_camp_name": "Silchar Stadium Relief Shelter",
-            "check_in_time": "2026-08-03T08:30:00Z"
-        }
+        "match_details": {"matched_person_name": "Rahul Borthakur", "matched_camp_id": "camp-001", "matched_camp_name": "Silchar SA Road Stadium Relief Shelter", "check_in_time": "2026-08-03T08:30:00Z"}
     },
     {
         "report_id": "rep-002",
         "reporter_name": "Manoj Gogoi",
         "reporter_contact": "+91 94350 54321",
         "missing_person_name": "Sunita Gogoi",
-        "last_known_location": "Barpeta Town, Block B",
+        "last_known_location": "Barpeta Town Block B, NH37 Crossing",
         "last_seen_time": "2026-08-03T07:15:00Z",
         "photo_url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
         "status": "Possible Match",
         "created_at": "2026-08-03T09:30:00Z",
-        "match_details": {
-            "matched_person_name": "Sunita Gogoi",
-            "matched_camp_id": "camp-002",
-            "matched_camp_name": "Barpeta High School Relief Center",
-            "check_in_time": "2026-08-03T09:15:00Z"
-        }
+        "match_details": {"matched_person_name": "Sunita Gogoi", "matched_camp_id": "camp-002", "matched_camp_name": "Barpeta Sarat Chandra High School Relief Centre", "check_in_time": "2026-08-03T09:15:00Z"}
     },
     {
         "report_id": "rep-003",
         "reporter_name": "Bhaben Kalita",
         "reporter_contact": "+91 98540 67890",
         "missing_person_name": "Tarun Kalita",
-        "last_known_location": "Morigaon Bhuragaon Village",
+        "last_known_location": "Morigaon Bhuragaon Village, near paddy field embankment",
         "last_seen_time": "2026-08-03T05:45:00Z",
         "photo_url": None,
         "status": "No Match",
@@ -157,17 +105,84 @@ INITIAL_REPORTS = [
         "reporter_name": "Deepa Deka",
         "reporter_contact": "+91 97060 11223",
         "missing_person_name": "Pranjal Deka",
-        "last_known_location": "Tezpur Mission Chariali",
+        "last_known_location": "Tezpur Mission Chariali, flood-affected locality",
         "last_seen_time": "2026-08-02T18:00:00Z",
         "photo_url": None,
         "status": "Reunited",
         "created_at": "2026-08-03T08:00:00Z",
-        "match_details": {
-            "matched_person_name": "Pranjal Deka",
-            "matched_camp_id": "camp-003",
-            "matched_camp_name": "Tezpur District Shelter Center",
-            "check_in_time": "2026-08-03T07:30:00Z"
-        }
+        "match_details": {"matched_person_name": "Pranjal Deka", "matched_camp_id": "camp-003", "matched_camp_name": "Tezpur College Ground Flood Shelter (ASDMA)", "check_in_time": "2026-08-03T07:30:00Z"}
+    },
+    {
+        "report_id": "rep-005",
+        "reporter_name": "Nilufar Begum",
+        "reporter_contact": "+91 96382 88901",
+        "missing_person_name": "Habibur Rahman",
+        "last_known_location": "Dhubri Gauripur, near mosque road",
+        "last_seen_time": "2026-08-03T04:00:00Z",
+        "photo_url": None,
+        "status": "Possible Match",
+        "created_at": "2026-08-03T11:00:00Z",
+        "match_details": {"matched_person_name": "Raju Ahmed", "matched_camp_id": "camp-007", "matched_camp_name": "Dhubri DC Office Flood Relief Camp", "check_in_time": "2026-08-03T13:30:00Z"}
+    },
+    {
+        "report_id": "rep-006",
+        "reporter_name": "Sanjay Nath",
+        "reporter_contact": "+91 98610 33445",
+        "missing_person_name": "Debojit Nath",
+        "last_known_location": "Lanka Town, Hojai District, near bus stand",
+        "last_seen_time": "2026-08-03T06:00:00Z",
+        "photo_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150",
+        "status": "Possible Match",
+        "created_at": "2026-08-03T12:00:00Z",
+        "match_details": {"matched_person_name": "Debojit Nath", "matched_camp_id": "camp-009", "matched_camp_name": "Hojai Lanka SDMC Relief Shelter", "check_in_time": "2026-08-03T14:20:00Z"}
+    },
+    {
+        "report_id": "rep-007",
+        "reporter_name": "Geetanjali Boro",
+        "reporter_contact": "+91 97740 55667",
+        "missing_person_name": "Jibon Boro",
+        "last_known_location": "Chirang Bijni near Manas forest edge",
+        "last_seen_time": "2026-08-02T22:00:00Z",
+        "photo_url": None,
+        "status": "No Match",
+        "created_at": "2026-08-03T08:30:00Z",
+        "match_details": None
+    },
+    {
+        "report_id": "rep-008",
+        "reporter_name": "Purnima Medhi",
+        "reporter_contact": "+91 94011 77889",
+        "missing_person_name": "Hiren Medhi",
+        "last_known_location": "Bijni Town centre flood zone, Chirang District",
+        "last_seen_time": "2026-08-03T08:00:00Z",
+        "photo_url": None,
+        "status": "Reunited",
+        "created_at": "2026-08-03T14:00:00Z",
+        "match_details": {"matched_person_name": "Hiren Medhi", "matched_camp_id": "camp-010", "matched_camp_name": "Chirang Bijni Govt. HS School Relief Camp", "check_in_time": "2026-08-03T15:45:00Z"}
+    },
+    {
+        "report_id": "rep-009",
+        "reporter_name": "Dipak Konwar",
+        "reporter_contact": "+91 96132 99001",
+        "missing_person_name": "Dipika Konwar",
+        "last_known_location": "Gauripur Dhubri near river embankment, paddy storage area",
+        "last_seen_time": "2026-08-03T05:20:00Z",
+        "photo_url": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150",
+        "status": "Possible Match",
+        "created_at": "2026-08-03T10:00:00Z",
+        "match_details": {"matched_person_name": "Dipika Konwar", "matched_camp_id": "camp-007", "matched_camp_name": "Dhubri DC Office Flood Relief Camp", "check_in_time": "2026-08-03T13:00:00Z"}
+    },
+    {
+        "report_id": "rep-010",
+        "reporter_name": "Kalyani Kalita",
+        "reporter_contact": "+91 97650 22334",
+        "missing_person_name": "Mousumi Kalita",
+        "last_known_location": "Barpeta Road Station area, near Sarat Chandra colony",
+        "last_seen_time": "2026-08-03T07:45:00Z",
+        "photo_url": None,
+        "status": "Reunited",
+        "created_at": "2026-08-03T13:00:00Z",
+        "match_details": {"matched_person_name": "Mousumi Kalita", "matched_camp_id": "camp-002", "matched_camp_name": "Barpeta Sarat Chandra High School Relief Centre", "check_in_time": "2026-08-03T15:00:00Z"}
     }
 ]
 

@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import os
 import sys
 import json
@@ -66,18 +66,18 @@ async def test_dvs_triage_and_queue():
         q_data = res_q.json()
         
         assert q_data["status"] == "success"
-        assert q_data["total_cases"] == 9
+        assert q_data["total_cases"] == 10
         assert "Tier 1" in q_data["tier_counts"]
         assert q_data["tier_counts"]["Tier 1"] == 3
         assert q_data["tier_counts"]["Tier 2"] == 4
-        assert q_data["tier_counts"]["Tier 3"] == 2
-        print("    - GET /queue -> Total Cases: 9 (Tier 1: 3, Tier 2: 4, Tier 3: 2) PASSED")
+        assert q_data["tier_counts"]["Tier 3"] == 3
+        print("    - GET /queue -> Total Cases: 10 (Tier 1: 3, Tier 2: 4, Tier 3: 3) PASSED")
 
         # Verify ordering of entire queue
         queue_list = q_data["queue"]
         tiers = [c["tier"] for c in queue_list]
-        assert tiers == ["Tier 1", "Tier 1", "Tier 1", "Tier 2", "Tier 2", "Tier 2", "Tier 2", "Tier 3", "Tier 3"], f"Queue tier order wrong: {tiers}"
-        print("    - Queue Tier Sequence (3x Tier 1 -> 4x Tier 2 -> 2x Tier 3): PASSED")
+        assert tiers == ["Tier 1", "Tier 1", "Tier 1", "Tier 2", "Tier 2", "Tier 2", "Tier 2", "Tier 3", "Tier 3", "Tier 3"], f"Queue tier order wrong: {tiers}"
+        print("    - Queue Tier Sequence (3x Tier 1 -> 4x Tier 2 -> 3x Tier 3): PASSED")
 
         # Test POST /intake pushes new case into queue
         intake_res = await client.post("/intake", data={
@@ -88,10 +88,10 @@ async def test_dvs_triage_and_queue():
         intake_json = intake_res.json()
         assert intake_json["case"]["tier"] == "Tier 1"
 
-        # Check queue total updated to 10
+        # Check queue total updated to 11
         res_q2 = await client.get("/queue")
-        assert res_q2.json()["total_cases"] == 10
-        print("    - POST /intake auto-insertion into Queue (Total 10 cases): PASSED")
+        assert res_q2.json()["total_cases"] == 11
+        print("    - New intake successfully triaged into Queue (Total now 11): PASSED")
 
         # Test GET /queue?tier_filter=Tier 1
         res_filtered = await client.get("/queue?tier_filter=Tier 1")

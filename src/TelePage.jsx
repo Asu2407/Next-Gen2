@@ -7,6 +7,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import TeleHealthBridge from './TeleHealthBridge'
+import { useLang } from './i18n/LangContext'
+import LanguageSwitcher from './components/LanguageSwitcher'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // set VITE_API_BASE_URL when deployed; empty string uses the Vite dev proxy → localhost:8000
 
@@ -17,12 +19,12 @@ const TIER_COLOR = {
   'Tier 3': '#639922',
 }
 
-// Status display config
-const STATUS_CFG = {
-  not_needed: { color: '#475569', label: 'Not needed' },
-  connecting:  { color: '#EF9F27', label: 'Connecting…' },
-  connected:   { color: '#E24B4A', label: '● On call' },
-  completed:   { color: '#639922', label: 'Completed' },
+// Status display config — labels come from translations
+const STATUS_KEYS = {
+  not_needed: { color: '#475569', key: null },
+  connecting:  { color: '#EF9F27', key: 'lbl.loading' },
+  connected:   { color: '#E24B4A', key: 'tele.on_call' },
+  completed:   { color: '#639922', key: 'tele.completed' },
 }
 
 function isEligible(c) {
@@ -49,9 +51,11 @@ function Skeleton({ height = 80, radius = 10 }) {
 
 // ── Case card ─────────────────────────────────────────────────────────────────
 function CaseCard({ caseData, onConnect, activeId }) {
+  const { t } = useLang()
   const eligible = isEligible(caseData)
   const tierColor = TIER_COLOR[caseData.tier] ?? '#64748b'
-  const statusCfg = STATUS_CFG[caseData.tele_health_status] ?? STATUS_CFG.not_needed
+  const statusKey = STATUS_KEYS[caseData.tele_health_status] ?? STATUS_KEYS.not_needed
+  const statusLabel = statusKey.key ? t(statusKey.key) : (caseData.tele_health_status === 'not_needed' ? '—' : caseData.tele_health_status)
   const isActive = activeId === caseData.case_id
 
   return (
@@ -99,7 +103,7 @@ function CaseCard({ caseData, onConnect, activeId }) {
               borderRadius: 4, border: '1px solid rgba(226,75,74,0.3)',
               letterSpacing: '0.06em',
             }}>
-              ♥ MATERNITY
+              {t('tele.maternity')}
             </span>
           )}
           {caseData.vulnerability_flags?.map(f => (
@@ -112,8 +116,8 @@ function CaseCard({ caseData, onConnect, activeId }) {
             </span>
           ))}
         </div>
-        <div className="text-mono" style={{ fontSize: 10, color: statusCfg.color, marginTop: 6, fontWeight: 500 }}>
-          {statusCfg.label}
+        <div className="text-mono" style={{ fontSize: 10, color: statusKey.color, marginTop: 6, fontWeight: 500 }}>
+          {statusLabel}
         </div>
       </div>
 
@@ -140,7 +144,7 @@ function CaseCard({ caseData, onConnect, activeId }) {
           minHeight: 34,
         }}
       >
-        {eligible ? (isActive ? '📞 Active' : '📞 Connect') : 'Not eligible'}
+        {eligible ? (isActive ? t('tele.active') : t('tele.connect')) : t('tele.not_eligible')}
       </motion.button>
     </motion.div>
   )
@@ -148,6 +152,7 @@ function CaseCard({ caseData, onConnect, activeId }) {
 
 // ── Main Tele Page ────────────────────────────────────────────────────────────
 export default function TelePage({ onBack }) {
+  const { t } = useLang()
   const [cases, setCases]         = useState(null)
   const [loadErr, setLoadErr]     = useState(null)
   const [activeCase, setActiveCase] = useState(null)
@@ -208,7 +213,7 @@ export default function TelePage({ onBack }) {
             padding: '4px 8px', borderRadius: 6,
           }}
         >
-          ← <span style={{ fontSize: 13 }}>Map</span>
+          ← <span style={{ fontSize: 13 }}>{t('nav.map')}</span>
         </motion.button>
 
         <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)' }} />
@@ -222,7 +227,7 @@ export default function TelePage({ onBack }) {
             MODULE 4
           </span>
           <span style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9' }}>
-            Tele-Maternity Emergency Bridge
+            {t('tele.title')}
           </span>
         </div>
 
@@ -230,16 +235,17 @@ export default function TelePage({ onBack }) {
           {loadErr === null && cases !== null && (
             <>
               <span style={{ fontSize: 11, color: '#64748b' }}>
-                <span style={{ color: '#E24B4A', fontWeight: 700 }}>{eligibleCases.length}</span> eligible
+                <span style={{ color: '#E24B4A', fontWeight: 700 }}>{eligibleCases.length}</span> {t('tele.eligible_count')}
               </span>
               <span style={{ fontSize: 11, color: '#475569' }}>·</span>
               <span style={{ fontSize: 11, color: '#64748b' }}>
                 <span style={{ color: enrichedCases.filter(c => c.tele_health_status === 'connected').length > 0 ? '#E24B4A' : '#64748b', fontWeight: 700 }}>
                   {enrichedCases.filter(c => c.tele_health_status === 'connected').length}
-                </span> on call
+                </span> {t('tele.on_call')}
               </span>
             </>
           )}
+          <LanguageSwitcher style={{ marginLeft: 8 }} />
         </div>
       </div>
 
@@ -263,7 +269,7 @@ export default function TelePage({ onBack }) {
             }}>
               <div style={{ fontSize: 28, marginBottom: 10 }}>⚠</div>
               <div style={{ color: '#fca5a5', fontSize: 13, marginBottom: 8 }}>
-                Could not load triage queue
+                {t('tele.load_err')}
               </div>
               <div style={{ color: '#64748b', fontSize: 11 }}>{loadErr}</div>
               <button
@@ -276,7 +282,7 @@ export default function TelePage({ onBack }) {
                   color: '#fca5a5', fontSize: 12, fontFamily: 'inherit',
                 }}
               >
-                Retry
+                {t('btn.retry')}
               </button>
             </div>
           )}
@@ -294,7 +300,7 @@ export default function TelePage({ onBack }) {
                     display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
                     background: '#E24B4A', boxShadow: '0 0 6px #E24B4A88',
                   }} />
-                  ELIGIBLE — PREGNANT / LABOR ({eligibleCases.length})
+                  {t('tele.eligible_hdr')} ({eligibleCases.length})
                 </div>
 
                 {eligibleCases.length === 0 ? (
@@ -303,7 +309,7 @@ export default function TelePage({ onBack }) {
                     border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 10,
                     color: '#475569', fontSize: 12,
                   }}>
-                    No eligible maternity cases in the current queue
+                    {t('tele.empty')}
                   </div>
                 ) : (
                   <AnimatePresence>
@@ -328,7 +334,7 @@ export default function TelePage({ onBack }) {
                     fontSize: 11, fontWeight: 700, letterSpacing: '0.09em',
                     color: '#475569', marginBottom: 12,
                   }}>
-                    OTHER TIER 1 — NOT ELIGIBLE FOR THIS BRIDGE ({otherTier1.length})
+                    {t('tele.other_t1')} ({otherTier1.length})
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {otherTier1.map(c => (
@@ -377,7 +383,7 @@ export default function TelePage({ onBack }) {
               >
                 <div style={{ fontSize: 36, marginBottom: 14, opacity: 0.3 }}>📞</div>
                 <div style={{ color: '#334155', fontSize: 13, lineHeight: 1.6 }}>
-                  Select a case from the list to open the Tele-Maternity bridge
+                  {t('tele.select_case')}
                 </div>
               </motion.div>
             )}

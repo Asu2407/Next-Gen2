@@ -320,7 +320,7 @@ export default function TeleHealthBridge({ caseData, onStatusChange, onClose }) 
               border: '1px solid rgba(226, 75, 74, 0.25)',
               borderRadius: 10, padding: '11px 14px',
               display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between', marginBottom: 16,
+              justifyContent: 'space-between', marginBottom: 14,
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <motion.div
@@ -330,12 +330,62 @@ export default function TeleHealthBridge({ caseData, onStatusChange, onClose }) 
                 />
                 <div>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9' }}>{nurseName}</div>
-                  <div style={{ fontSize: 10, color: '#64748b' }}>District Health Mission · Assam</div>
+                  <div style={{ fontSize: 10, color: '#64748b' }}>Assam Tele-Maternity Critical Care Unit</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <AudioWaveform />
                 <CallTimer running={phase === 'connected'} />
+              </div>
+            </div>
+
+            {/* Live Maternal & Fetal Telemetry Monitor */}
+            <div style={{
+              background: 'rgba(5, 10, 20, 0.95)',
+              border: '1px solid rgba(0, 229, 255, 0.25)',
+              borderRadius: 10, padding: '10px 14px', marginBottom: 14
+            }}>
+              <div style={{
+                fontSize: 9, fontWeight: 700, letterSpacing: '0.1em',
+                color: 'var(--cyan)', marginBottom: 8, display: 'flex', justifyContent: 'space-between'
+              }}>
+                <span>PATIENT VITAL SIGNS TELEMETRY (LIVE SIMULATION)</span>
+                <span className="status-pill status-critical" style={{ fontSize: 8 }}>MONITOR ACTIVE</span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, textAlign: 'center' }}>
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 4px', borderRadius: 6 }}>
+                  <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>FETAL HR</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#34d399', fontFamily: 'monospace' }}>144 <span style={{ fontSize: 8 }}>BPM</span></div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 4px', borderRadius: 6 }}>
+                  <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>MATERNAL HR</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#ff6b6b', fontFamily: 'monospace' }}>102 <span style={{ fontSize: 8 }}>BPM</span></div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 4px', borderRadius: 6 }}>
+                  <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>CONTRACTION</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#fcd34d', fontFamily: 'monospace' }}>3m 40s</div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '6px 4px', borderRadius: 6 }}>
+                  <div style={{ fontSize: 8, color: 'var(--text-muted)' }}>SPO2</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--cyan)', fontFamily: 'monospace' }}>98%</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Audio & Multilingual Translation Stream */}
+            <div style={{
+              background: 'rgba(15, 23, 42, 0.7)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              borderRadius: 10, padding: '10px 12px', marginBottom: 14
+            }}>
+              <div style={{ fontSize: 9, fontWeight: 700, color: '#94a3b8', marginBottom: 6, letterSpacing: '0.08em' }}>
+                AI LIVE MULTILINGUAL CLINICAL TRANSLATION
+              </div>
+              <div style={{ fontSize: 11, color: '#38bdf8', fontStyle: 'italic', marginBottom: 4 }}>
+                🗣️ Caller (Assamese): "পানী বুকু সমান বাঢ়িছে, বিষ অসহ্য হৈ পৰিছে..."
+              </div>
+              <div style={{ fontSize: 11, color: '#e2e8f0' }}>
+                🇬🇧 Doctor Translation: "Water has reached chest level, contractions are intensifying rapidly. Immediate extraction required."
               </div>
             </div>
 
@@ -375,23 +425,52 @@ export default function TeleHealthBridge({ caseData, onStatusChange, onClose }) 
               </div>
             </div>
 
-            {/* End call button */}
-            <motion.button
-              onClick={handleEndCall}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-              style={{
-                width: '100%', padding: '10px 0',
-                background: 'rgba(100,116,139,0.1)',
-                border: '1px solid rgba(100,116,139,0.25)',
-                borderRadius: 9, cursor: 'pointer',
-                color: '#94a3b8', fontWeight: 600, fontSize: 13,
-                fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-              }}
-            >
-              <span style={{ fontSize: 14 }}>📵</span> End call — mark completed
-            </motion.button>
+            {/* Action buttons */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <motion.button
+                onClick={async () => {
+                  await fetch('/api/dispatch-rescue', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      case_id: caseData.case_id,
+                      station_id: 'majuli-river-ambulance',
+                      asset_type: 'Maternity Boat Ambulance & Paramedic Unit'
+                    })
+                  })
+                  alert('🚑 Water Ambulance & Neonatal Unit dispatched from nearest river base!')
+                }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  width: '100%', padding: '11px 0',
+                  background: 'linear-gradient(135deg, #00E5FF 0%, #0284c7 100%)',
+                  border: 'none', borderRadius: 9, cursor: 'pointer',
+                  color: '#050a14', fontWeight: 800, fontSize: 13,
+                  fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                  boxShadow: '0 0 16px rgba(0, 229, 255, 0.35)'
+                }}
+              >
+                🚤 Dispatch River Ambulance & Mobile Incubator
+              </motion.button>
+
+              <motion.button
+                onClick={handleEndCall}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+                style={{
+                  width: '100%', padding: '9px 0',
+                  background: 'rgba(100,116,139,0.1)',
+                  border: '1px solid rgba(100,116,139,0.25)',
+                  borderRadius: 9, cursor: 'pointer',
+                  color: '#94a3b8', fontWeight: 600, fontSize: 12,
+                  fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                }}
+              >
+                <span style={{ fontSize: 14 }}>📵</span> End call — mark completed
+              </motion.button>
+            </div>
           </motion.div>
         )}
 
