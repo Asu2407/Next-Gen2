@@ -171,7 +171,7 @@ class PriorityQueueStore:
         """Re-seed queue with default mock cases & demo deduplication cluster."""
         self._cases = {}
 
-        # 1. Ingest base 9 cases
+        # 1. Ingest base cases
         for c in INITIAL_MOCK_CASES:
             case_copy = deepcopy(c)
             case_copy["tier"] = assign_dvs_tier(case_copy)
@@ -181,6 +181,9 @@ class PriorityQueueStore:
                 "raw_transcript": case_copy.get("raw_transcript"),
                 "timestamp": case_copy.get("timestamp")
             }])
+            if case_copy["case_id"] in CASE_COORDINATES:
+                case_copy["lat"] = CASE_COORDINATES[case_copy["case_id"]]["lat"]
+                case_copy["lng"] = CASE_COORDINATES[case_copy["case_id"]]["lng"]
             self._cases[case_copy["case_id"]] = case_copy
 
         # 2. Seed Module 8 Demo Scenario 1: Duplicate Cluster (Silchar Ward 5)
