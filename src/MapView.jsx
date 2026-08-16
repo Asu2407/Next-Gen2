@@ -332,7 +332,7 @@ function LoadingScreen({ error, onRetry }) {
   )
 }
 
-function CasePopupContent({ props, onFindNearestCamp }) {
+function CasePopupContent({ props, onFindNearestCamp, onDispatchRescue }) {
   const meta = TIER[props.tier] || TIER['Tier 3']
   const isOverdue = props.is_overdue === true
   const mergedCount = props.merged_count ?? 1
