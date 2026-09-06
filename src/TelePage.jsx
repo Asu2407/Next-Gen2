@@ -249,7 +249,7 @@ export default function TelePage({ onBack }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1060, margin: '0 auto', padding: '28px 24px', display: 'flex', gap: 24 }}>
+      <div className="view-card-stagger-in" style={{ maxWidth: 1060, margin: '0 auto', padding: '28px 24px', display: 'flex', gap: 24 }}>
 
         {/* ── Left: case list ── */}
         <div style={{ flex: 1, minWidth: 0 }}>

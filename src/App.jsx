@@ -196,8 +196,10 @@ export default function App() {
           {activeTab === 'map' && (
             <motion.div
               key="map"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
+              initial={{ opacity: 0, scale: 0.99, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
               style={{ width: '100%', height: '100%' }}
             >
               <MapView
@@ -211,8 +213,10 @@ export default function App() {
           {activeTab === 'tele' && (
             <motion.div
               key="tele"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
+              initial={{ opacity: 0, scale: 0.99, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
               style={{ width: '100%', height: '100%', overflowY: 'auto' }}
             >
               <TelePage onBack={() => setActiveTab('map')} />
@@ -222,8 +226,10 @@ export default function App() {
           {activeTab === 'audit' && (
             <motion.div
               key="audit"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
+              initial={{ opacity: 0, scale: 0.99, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
               style={{ width: '100%', height: '100%', overflowY: 'auto' }}
             >
               <AuditPage onBack={() => setActiveTab('map')} />
@@ -233,8 +239,10 @@ export default function App() {
           {activeTab === 'field' && (
             <motion.div
               key="field"
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.18 }}
+              initial={{ opacity: 0, scale: 0.99, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.99 }}
+              transition={{ duration: 0.26, ease: [0.16, 1, 0.3, 1] }}
               style={{ width: '100%', height: '100%', overflowY: 'auto' }}
             >
               <FieldWorkerPage onBack={() => setActiveTab('map')} />

@@ -250,7 +250,7 @@ export default function AuditPage({ onBack }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 1180, margin: '0 auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div className="view-card-stagger-in" style={{ maxWidth: 1180, margin: '0 auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: 24 }}>
 
         {/* ── TOP KPI ACCOUNTABILITY METRICS BAR ── */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>

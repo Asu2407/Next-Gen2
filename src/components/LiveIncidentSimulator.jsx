@@ -59,9 +59,18 @@ export default function LiveIncidentSimulator({ isOpen, onClose, onCaseProcessed
   const [isProcessing, setIsProcessing] = useState(false)
   const [extractionResult, setExtractionResult] = useState(null)
   const [isSurging, setIsSurging] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
 
   // Waveform canvas animation
   const canvasRef = useRef(null)
+
+  const handleClose = () => {
+    setIsClosing(true)
+    setTimeout(() => {
+      setIsClosing(false)
+      onClose()
+    }, 200)
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -157,15 +166,17 @@ export default function LiveIncidentSimulator({ isOpen, onClose, onCaseProcessed
   }
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 9999,
-      background: 'rgba(3, 7, 18, 0.88)', backdropFilter: 'blur(12px)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
-    }}>
-      <motion.div
-        initial={{ scale: 0.94, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.94, opacity: 0 }}
+    <div
+      className={isClosing ? "view-section-exit" : "view-section-enter"}
+      onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 9999,
+        background: 'rgba(3, 7, 18, 0.88)', backdropFilter: 'blur(12px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
+      }}
+    >
+      <div
+        className="view-card-stagger-in"
         style={{
           width: '100%', maxWidth: 760, background: '#080E1A',
           border: '1px solid rgba(0, 229, 255, 0.35)', borderRadius: 14,
@@ -191,7 +202,7 @@ export default function LiveIncidentSimulator({ isOpen, onClose, onCaseProcessed
             </div>
           </div>
           <button
-            onClick={() => { audioFx.playTactile(); onClose() }}
+            onClick={() => { audioFx.playTactile(); handleClose() }}
             style={{
               background: 'transparent', border: '1px solid rgba(255,255,255,0.15)',
               color: '#ddd', width: 28, height: 28, borderRadius: '50%', cursor: 'pointer'
@@ -323,7 +334,7 @@ export default function LiveIncidentSimulator({ isOpen, onClose, onCaseProcessed
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

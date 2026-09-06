@@ -22,6 +22,7 @@ import LanguageSwitcher from './components/LanguageSwitcher'
 import { audioFx } from './utils/audioFx'
 import DroneReconModal from './components/DroneReconModal'
 import LiveIncidentSimulator from './components/LiveIncidentSimulator'
+import TeleHealthBridge from './TeleHealthBridge'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // Vite proxy → localhost:8000
@@ -483,8 +484,10 @@ function CasePopupContent({ props, onFindNearestCamp, onDispatchRescue }) {
   )
 }
 
-function QueuePanel({ queue, filter, onFindNearestCamp, onDispatchRescue, overdueCases }) {
+function QueuePanel({ queue, filter, onFindNearestCamp, onDispatchRescue, overdueCases, onConnectTele, activeTeleCaseId }) {
   const { t } = useLang()
+  const [activeCategoryTab, setActiveCategoryTab] = useState('all') // 'all' | 'medical' | 't1' | 'oncall'
+  const [activeVulnChip, setActiveVulnChip] = useState(null) // null | 'pregnant' | 'infant' | 'elderly' | 'dialysis' | 'disabled' | 'injured'
   const tiers = queue?.tiers ?? {}
   const f = filter.toLowerCase().trim()
 
@@ -496,20 +499,270 @@ function QueuePanel({ queue, filter, onFindNearestCamp, onDispatchRescue, overdu
     return map
   }, [overdueCases])
 
-  const filterCases = (cases) => !f
-    ? cases
-    : cases.filter(c =>
+  // Helper to identify medical & maternity cases
+  const isMedicalCase = useCallback((c) => {
+    const vFlags = (c.vulnerability_flags || []).map(x => String(x).toLowerCase())
+    const eCats = (c.emergency_categories || []).map(x => String(x).toLowerCase())
+    const hasMedicalFlag = vFlags.some(flag => ['pregnant', 'infant', 'elderly', 'disabled', 'dialysis', 'medical', 'cardiac', 'injury'].includes(flag))
+    const hasMedicalCat = eCats.some(cat => ['medical', 'labor', 'maternity', 'injury', 'dialysis', 'casualty'].includes(cat))
+    const hasActiveStatus = c.tele_health_status && c.tele_health_status !== 'not_needed'
+    return hasMedicalFlag || hasMedicalCat || hasActiveStatus
+  }, [])
+
+  const isMaternityCase = useCallback((c) => {
+    const vFlags = (c.vulnerability_flags || []).map(x => String(x).toLowerCase())
+    const eCats = (c.emergency_categories || []).map(x => String(x).toLowerCase())
+    return vFlags.includes('pregnant') || eCats.includes('labor') || eCats.includes('maternity')
+  }, [])
+
+  // Quick aggregate statistics across all tiers
+  const stats = useMemo(() => {
+    let total = 0
+    let medicalCount = 0
+    let t1Count = 0
+    let onCallCount = 0
+
+    Object.values(tiers).forEach(cases => {
+      cases.forEach(c => {
+        total++
+        if (isMedicalCase(c)) medicalCount++
+        if (c.tier === 'Tier 1') t1Count++
+        if (['connected', 'connecting'].includes(c.tele_health_status)) onCallCount++
+      })
+    })
+
+    return { total, medicalCount, t1Count, onCallCount }
+  }, [tiers, isMedicalCase])
+
+  // Dynamic demographic counts across all cases
+  const vulnCounts = useMemo(() => {
+    const counts = {
+      pregnant: 0,
+      infant: 0,
+      elderly: 0,
+      dialysis: 0,
+      disabled: 0,
+      injured: 0,
+    }
+    Object.values(tiers).forEach(cases => {
+      cases.forEach(c => {
+        const vFlags = (c.vulnerability_flags || []).map(x => String(x).toLowerCase())
+        const eCats = (c.emergency_categories || []).map(x => String(x).toLowerCase())
+        if (vFlags.includes('pregnant') || eCats.includes('labor') || eCats.includes('maternity')) counts.pregnant++
+        if (vFlags.includes('infant') || vFlags.includes('child')) counts.infant++
+        if (vFlags.includes('elderly')) counts.elderly++
+        if (vFlags.includes('dialysis')) counts.dialysis++
+        if (vFlags.includes('disabled')) counts.disabled++
+        if (vFlags.includes('injured') || vFlags.includes('injury') || eCats.includes('injury')) counts.injured++
+      })
+    })
+    return counts
+  }, [tiers])
+
+  const filterCases = (cases) => {
+    return cases.filter(c => {
+      // 1. Text filter match
+      const matchesText = !f ||
         c.gps_or_landmark?.toLowerCase().includes(f) ||
-        c.tier?.toLowerCase().includes(f)
-      )
+        c.tier?.toLowerCase().includes(f) ||
+        c.vulnerability_flags?.some(vf => vf.toLowerCase().includes(f)) ||
+        c.emergency_categories?.some(ec => ec.toLowerCase().includes(f))
+
+      if (!matchesText) return false
+
+      // 2. Category tab filter
+      if (activeCategoryTab === 'medical') {
+        if (!isMedicalCase(c)) return false
+      } else if (activeCategoryTab === 't1') {
+        if (c.tier !== 'Tier 1') return false
+      } else if (activeCategoryTab === 'oncall') {
+        if (!['connected', 'connecting', 'completed'].includes(c.tele_health_status)) return false
+      }
+
+      // 3. Demographic Vulnerability Quick-Filter Chip
+      if (activeVulnChip) {
+        const vFlags = (c.vulnerability_flags || []).map(x => String(x).toLowerCase())
+        const eCats = (c.emergency_categories || []).map(x => String(x).toLowerCase())
+        if (activeVulnChip === 'pregnant' && !(vFlags.includes('pregnant') || eCats.includes('labor') || eCats.includes('maternity'))) return false
+        if (activeVulnChip === 'infant' && !(vFlags.includes('infant') || vFlags.includes('child'))) return false
+        if (activeVulnChip === 'elderly' && !vFlags.includes('elderly')) return false
+        if (activeVulnChip === 'dialysis' && !vFlags.includes('dialysis')) return false
+        if (activeVulnChip === 'disabled' && !vFlags.includes('disabled')) return false
+        if (activeVulnChip === 'injured' && !(vFlags.includes('injured') || vFlags.includes('injury') || eCats.includes('injury'))) return false
+      }
+
+      return true
+    })
+  }
 
   return (
     <>
-      <PanelHeader icon="📡" title={t('panel.queue_title')} subtitle={`${queue?.total_cases ?? 0} ${t('queue.cases')}`} />
+      <PanelHeader
+        icon="🆘"
+        title={t('panel.queue_title')}
+        subtitle={`${stats.total} ${t('queue.cases')} · ${stats.medicalCount} medical/maternity priority`}
+      />
+
+      {/* Category Filter Tabs */}
+      <div style={{
+        display: 'flex',
+        gap: 6,
+        marginBottom: 12,
+        overflowX: 'auto',
+        paddingBottom: 4,
+      }}>
+        {[
+          { key: 'all', label: t('queue.tab_all'), count: stats.total, color: 'var(--cyan)' },
+          { key: 'medical', label: t('queue.tab_medical'), count: stats.medicalCount, color: '#f43f5e' },
+          { key: 't1', label: t('queue.tab_t1'), count: stats.t1Count, color: '#E24B4A' },
+          { key: 'oncall', label: t('queue.tab_oncall'), count: stats.onCallCount, color: '#38bdf8' },
+        ].map(tab => {
+          const isActive = activeCategoryTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveCategoryTab(tab.key)}
+              style={{
+                background: isActive ? `${tab.color}22` : 'rgba(255,255,255,0.03)',
+                border: `1px solid ${isActive ? tab.color : 'rgba(255,255,255,0.08)'}`,
+                borderRadius: 8,
+                padding: '6px 10px',
+                color: isActive ? '#fff' : 'var(--text-secondary)',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                whiteSpace: 'nowrap',
+                transition: 'all 0.15s ease',
+                boxShadow: isActive ? `0 0 10px ${tab.color}33` : 'none',
+                fontFamily: 'inherit',
+              }}
+            >
+              <span>{tab.label}</span>
+              <span style={{
+                background: isActive ? tab.color : 'rgba(255,255,255,0.1)',
+                color: isActive ? '#050a14' : 'var(--text-muted)',
+                fontSize: 9,
+                fontWeight: 800,
+                padding: '1px 5px',
+                borderRadius: 10,
+              }}>
+                {tab.count}
+              </span>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* Demographic Vulnerability Quick-Filter Chips */}
+      <div style={{
+        marginBottom: 16,
+        padding: '8px 12px',
+        background: 'rgba(255,255,255,0.02)',
+        border: '1px solid rgba(0,229,255,0.1)',
+        borderRadius: 10,
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          fontSize: 10, fontWeight: 700, letterSpacing: '0.06em',
+          color: '#94a3b8', marginBottom: 6,
+        }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ color: 'var(--cyan)' }}>⚡</span>
+            <span>{t('vuln.filter_label')}</span>
+          </span>
+          {activeVulnChip && (
+            <button
+              onClick={() => setActiveVulnChip(null)}
+              style={{
+                background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.2)',
+                color: '#00E5FF', borderRadius: 10, padding: '2px 8px',
+                fontSize: 10, fontWeight: 600, cursor: 'pointer',
+                display: 'inline-flex', alignItems: 'center', gap: 4,
+              }}
+            >
+              ✕ {t('vuln.clear')}
+            </button>
+          )}
+        </div>
+
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 6,
+        }}>
+          {[
+            { key: 'pregnant', icon: '🤰', label: t('vuln.pregnant'), count: vulnCounts.pregnant, color: '#f43f5e', glow: 'rgba(244,63,94,0.3)' },
+            { key: 'infant',   icon: '👶', label: t('vuln.infant'),   count: vulnCounts.infant,   color: '#fb923c', glow: 'rgba(251,146,60,0.3)' },
+            { key: 'elderly',  icon: '🧓', label: t('vuln.elderly'),  count: vulnCounts.elderly,  color: '#facc15', glow: 'rgba(250,204,21,0.3)' },
+            { key: 'dialysis', icon: '🩸', label: t('vuln.dialysis'), count: vulnCounts.dialysis, color: '#ec4899', glow: 'rgba(236,72,153,0.3)' },
+            { key: 'disabled', icon: '♿', label: t('vuln.disabled'), count: vulnCounts.disabled, color: '#a855f7', glow: 'rgba(168,85,247,0.3)' },
+            { key: 'injured',  icon: '🩹', label: t('vuln.injured'),  count: vulnCounts.injured,  color: '#38bdf8', glow: 'rgba(56,189,248,0.3)' },
+          ].map(chip => {
+            const isActive = activeVulnChip === chip.key
+            return (
+              <button
+                key={chip.key}
+                onClick={() => setActiveVulnChip(isActive ? null : chip.key)}
+                style={{
+                  background: isActive ? `${chip.color}25` : 'rgba(15,23,42,0.6)',
+                  border: `1px solid ${isActive ? chip.color : 'rgba(255,255,255,0.08)'}`,
+                  borderRadius: 14,
+                  padding: '4px 9px',
+                  color: isActive ? '#ffffff' : '#94a3b8',
+                  fontSize: 11,
+                  fontWeight: isActive ? 700 : 500,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: isActive ? `0 0 10px ${chip.glow}, inset 0 0 4px ${chip.glow}` : 'none',
+                  transform: isActive ? 'scale(1.02)' : 'none',
+                  fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'rgba(0,229,255,0.3)'
+                    e.currentTarget.style.color = '#e2e8f0'
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'
+                    e.currentTarget.style.color = '#94a3b8'
+                  }
+                }}
+              >
+                <span>{chip.icon}</span>
+                <span>{chip.label}</span>
+                <span style={{
+                  background: isActive ? chip.color : 'rgba(255,255,255,0.08)',
+                  color: isActive ? '#050a14' : '#64748b',
+                  fontSize: 9,
+                  fontWeight: 800,
+                  padding: '1px 5px',
+                  borderRadius: 8,
+                  minWidth: 14,
+                  textAlign: 'center',
+                }}>
+                  {chip.count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       {['Tier 1', 'Tier 2', 'Tier 3'].map(tierKey => {
         const allCases = tiers[tierKey] ?? []
         const cases = filterCases(allCases)
         const meta = TIER[tierKey]
+
+        if ((activeCategoryTab !== 'all' || activeVulnChip) && cases.length === 0) return null
+
         return (
           <div key={tierKey} style={{ marginBottom: 14 }}>
             <div style={{
@@ -521,91 +774,196 @@ function QueuePanel({ queue, filter, onFindNearestCamp, onDispatchRescue, overdu
                 display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
                 background: meta.color, boxShadow: `0 0 6px ${meta.glow}`,
               }} />
-              {tierKey} · {cases.length}{f ? ` of ${allCases.length}` : ''} {cases.length === 1 ? 'case' : 'cases'}
+              {tierKey} · {cases.length}{f || activeCategoryTab !== 'all' ? ` of ${allCases.length}` : ''} {cases.length === 1 ? 'case' : 'cases'}
             </div>
+
             {cases.length === 0 ? (
               <div style={{ color: '#475569', fontSize: 11, paddingLeft: 14 }}>
-                {f ? 'No matches' : '—'}
+                {f ? t('queue.no_match') : '—'}
               </div>
             ) : (
               cases.map(c => {
                 const ov = overdueMap[c.case_id]
                 const isOverdue = Boolean(ov)
                 const mergedCount = c.merged_count ?? 1
+                const isMaternity = isMaternityCase(c)
+                const isMedical = isMedicalCase(c)
+                const isOnCall = c.tele_health_status === 'connected'
+                const isConnecting = c.tele_health_status === 'connecting'
+                const isCompleted = c.tele_health_status === 'completed'
+                const isThisActive = activeTeleCaseId === c.case_id
 
                 return (
                   <div
                     key={c.case_id}
-                    className={`card-tier-${tierKey === 'Tier 1' ? '1' : tierKey === 'Tier 2' ? '2' : '3'} ${isOverdue ? 'pulse-t1' : ''}`}
+                    className={`card-tier-${tierKey === 'Tier 1' ? '1' : tierKey === 'Tier 2' ? '2' : '3'} ${isOverdue || isOnCall ? 'pulse-t1' : ''}`}
                     style={{
-                      padding: '10px 12px',
+                      padding: '11px 13px',
                       marginBottom: 8,
                       borderRadius: '0 8px 8px 0',
-                      border: isOverdue ? '1px solid var(--t1)' : '1px solid rgba(255, 255, 255, 0.04)',
-                      borderLeft: `3px solid ${isOverdue ? 'var(--t1)' : 'var(--t' + (tierKey === 'Tier 1' ? '1' : tierKey === 'Tier 2' ? '2' : '3') + ')'}`,
+                      border: isOnCall
+                        ? '1px solid #E24B4A'
+                        : isOverdue
+                        ? '1px solid var(--t1)'
+                        : isThisActive
+                        ? '1px solid var(--cyan)'
+                        : '1px solid rgba(255, 255, 255, 0.04)',
+                      borderLeft: `3px solid ${isOnCall ? '#E24B4A' : isOverdue ? 'var(--t1)' : 'var(--t' + (tierKey === 'Tier 1' ? '1' : tierKey === 'Tier 2' ? '2' : '3') + ')'}`,
                       transition: 'transform 0.2s ease, border-color 0.2s ease',
+                      background: isThisActive ? 'rgba(0, 229, 255, 0.05)' : undefined,
                     }}
                   >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      {(() => {
-                        const pill = getStatusPill(c.tier, isOverdue)
-                        return (
-                          <span className={`status-pill ${pill.cls}`}>
-                            {t(pill.labelKey).toUpperCase()}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        {(() => {
+                          const pill = getStatusPill(c.tier, isOverdue)
+                          return (
+                            <span className={`status-pill ${pill.cls}`}>
+                              {t(pill.labelKey).toUpperCase()}
+                            </span>
+                          )
+                        })()}
+
+                        {isMaternity && (
+                          <span style={{
+                            background: 'rgba(244,63,94,0.18)',
+                            color: '#f43f5e',
+                            border: '1px solid rgba(244,63,94,0.4)',
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                            letterSpacing: '0.04em',
+                          }}>
+                            {t('queue.maternity_badge')}
                           </span>
-                        )
-                      })()}
+                        )}
 
-                      {isOverdue && (
-                        <motion.div
-                          animate={{ opacity: [1, 0.5, 1] }}
-                          transition={{ repeat: Infinity, duration: 1.5 }}
-                          style={{
-                            fontSize: 9, fontWeight: 700, color: 'var(--t1)',
-                            letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 4,
-                          }}
-                        >
-                          🚨 OVERDUE — {ov.overdue_hours}h
-                        </motion.div>
-                      )}
+                        {!isMaternity && isMedical && (
+                          <span style={{
+                            background: 'rgba(56,189,248,0.15)',
+                            color: '#38bdf8',
+                            border: '1px solid rgba(56,189,248,0.3)',
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: '2px 6px',
+                            borderRadius: 4,
+                          }}>
+                            {t('queue.medical_badge')}
+                          </span>
+                        )}
+                      </div>
 
-                      {mergedCount > 1 && (
-                        <span style={{
-                          background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.3)',
-                          color: 'var(--cyan)', fontSize: 9, fontWeight: 700, padding: '1px 6px',
-                          borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 3,
-                        }}>
-                          🔗 {mergedCount} merged
-                        </span>
-                      )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                        {isOnCall && (
+                          <motion.span
+                            animate={{ opacity: [1, 0.4, 1] }}
+                            transition={{ repeat: Infinity, duration: 1 }}
+                            style={{
+                              background: 'rgba(226,75,74,0.2)',
+                              color: '#E24B4A',
+                              border: '1px solid rgba(226,75,74,0.5)',
+                              fontSize: 9,
+                              fontWeight: 700,
+                              padding: '2px 7px',
+                              borderRadius: 12,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#E24B4A' }} />
+                            ON CALL
+                          </motion.span>
+                        )}
+
+                        {isConnecting && (
+                          <span style={{
+                            background: 'rgba(239,159,39,0.2)',
+                            color: '#EF9F27',
+                            border: '1px solid rgba(239,159,39,0.4)',
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: '2px 7px',
+                            borderRadius: 12,
+                          }}>
+                            ⏳ CONNECTING
+                          </span>
+                        )}
+
+                        {isCompleted && (
+                          <span style={{
+                            background: 'rgba(99,153,34,0.2)',
+                            color: '#639922',
+                            border: '1px solid rgba(99,153,34,0.4)',
+                            fontSize: 9,
+                            fontWeight: 700,
+                            padding: '2px 7px',
+                            borderRadius: 12,
+                          }}>
+                            ✓ VISITED
+                          </span>
+                        )}
+
+                        {isOverdue && (
+                          <motion.div
+                            animate={{ opacity: [1, 0.5, 1] }}
+                            transition={{ repeat: Infinity, duration: 1.5 }}
+                            style={{
+                              fontSize: 9, fontWeight: 700, color: 'var(--t1)',
+                              letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: 4,
+                            }}
+                          >
+                            🚨 OVERDUE — {ov.overdue_hours}h
+                          </motion.div>
+                        )}
+
+                        {mergedCount > 1 && (
+                          <span style={{
+                            background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.3)',
+                            color: 'var(--cyan)', fontSize: 9, fontWeight: 700, padding: '1px 6px',
+                            borderRadius: 4, display: 'inline-flex', alignItems: 'center', gap: 3,
+                          }}>
+                            🔗 {mergedCount} merged
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-primary)', marginBottom: 4 }}>
-                      {c.gps_or_landmark || 'Unknown location'}
+                      📍 {c.gps_or_landmark || 'Unknown location'}
                     </div>
-                    <div className="text-mono" style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+
+                    <div className="text-mono" style={{ fontSize: 11, color: 'var(--text-secondary)', display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
                       <span>🎯 {c.urgency_score ?? '?'}/5</span>
-                      <span>👥 {c.victim_count ?? '?'}</span>
+                      <span>👥 {c.victim_count ?? '?'} victim(s)</span>
                       {(c.vulnerability_flags?.length > 0) && (
                         <span style={{ color: 'var(--t2)', fontWeight: 500 }}>⚑ {c.vulnerability_flags.join(', ')}</span>
                       )}
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 6 }}>
+
+                    {/* Action Grid (Shelter, Dispatch, Doctor Bridge) */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1.2fr', gap: 6 }}>
                       <button
                         onClick={() => onFindNearestCamp?.({ ...c, is_overdue: isOverdue, overdue_hours: ov?.overdue_hours })}
                         className="btn-primary"
                         style={{
-                          padding: '6px 8px',
+                          padding: '6px 4px',
                           minHeight: 28,
                           fontSize: 10,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 4,
                         }}
                       >
                         🏕️ Shelter ➔
                       </button>
+
                       <button
                         onClick={() => onDispatchRescue?.(c, 'ndrf-patgaon-guwahati', c.recommended_asset || 'NDRF Motorized Boat')}
                         style={{
-                          padding: '6px 8px',
+                          padding: '6px 4px',
                           minHeight: 28,
                           fontSize: 10,
                           fontWeight: 700,
@@ -614,10 +972,49 @@ function QueuePanel({ queue, filter, onFindNearestCamp, onDispatchRescue, overdu
                           color: c.is_dispatched ? '#34d399' : '#00E5FF',
                           borderRadius: 6,
                           cursor: 'pointer',
-                          fontFamily: 'inherit'
+                          fontFamily: 'inherit',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 4,
                         }}
                       >
                         {c.is_dispatched ? '✓ Dispatched' : '🚤 Dispatch'}
+                      </button>
+
+                      <button
+                        onClick={() => onConnectTele?.(c)}
+                        style={{
+                          padding: '6px 6px',
+                          minHeight: 28,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          background: isOnCall
+                            ? 'rgba(226,75,74,0.25)'
+                            : isMaternity
+                            ? 'linear-gradient(135deg, rgba(244,63,94,0.2) 0%, rgba(226,75,74,0.25) 100%)'
+                            : 'rgba(56,189,248,0.12)',
+                          border: isOnCall
+                            ? '1px solid #E24B4A'
+                            : isMaternity
+                            ? '1px solid #f43f5e'
+                            : '1px solid rgba(56,189,248,0.35)',
+                          color: isOnCall
+                            ? '#fca5a5'
+                            : isMaternity
+                            ? '#fca5a5'
+                            : '#38bdf8',
+                          borderRadius: 6,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 4,
+                          boxShadow: isMaternity ? '0 0 10px rgba(244,63,94,0.25)' : 'none',
+                        }}
+                      >
+                        {isOnCall ? '📞 Active Call' : isMaternity ? '♥ Doctor Call' : '🩺 Doctor Call'}
                       </button>
                     </div>
                   </div>
@@ -1346,7 +1743,20 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
   // Modals & Sound FX
   const [isDroneOpen, setIsDroneOpen]         = useState(false)
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false)
+  const [activeTeleCase, setActiveTeleCase]   = useState(null)
   const [isAudioMuted, setIsAudioMuted]       = useState(() => audioFx.isMuted())
+
+  const handleTeleStatusChange = useCallback((caseId, newStatus) => {
+    setQueue(prevQueue => {
+      if (!prevQueue?.tiers) return prevQueue
+      const newTiers = {}
+      for (const [tierKey, cases] of Object.entries(prevQueue.tiers)) {
+        newTiers[tierKey] = cases.map(c => c.case_id === caseId ? { ...c, tele_health_status: newStatus } : c)
+      }
+      return { ...prevQueue, tiers: newTiers }
+    })
+    setActiveTeleCase(prev => prev && prev.case_id === caseId ? { ...prev, tele_health_status: newStatus } : prev)
+  }, [])
 
   // Mobile responsiveness state (<768px)
   const [isMobile, setIsMobile]           = useState(window.innerWidth < 768)
@@ -1434,12 +1844,47 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
     return () => clearInterval(timer)
   }, [fetchAll])
 
+  const [isExitingPanel, setIsExitingPanel] = useState(false)
+  const prevPanelRef = useRef(null)
+  const isSubSwap = prevPanelRef.current !== null && panel !== null && prevPanelRef.current !== panel
+
+  useEffect(() => {
+    prevPanelRef.current = panel
+  }, [panel])
+
+  const closePanel = useCallback((afterCloseCb) => {
+    setIsExitingPanel(true)
+    setTimeout(() => {
+      setPanel(null)
+      setIsExitingPanel(false)
+      if (typeof afterCloseCb === 'function') afterCloseCb()
+    }, 200)
+  }, [])
+
   const handlePanelBtn = useCallback((key) => {
-    setPanel(prev => prev === key ? null : key)
+    if (key === null || key === panel) {
+      if (panel) {
+        closePanel()
+      }
+    } else {
+      setPanel(key)
+    }
     if (isMobile) {
       setMobileMenuOpen(false)
     }
-  }, [isMobile])
+  }, [panel, isMobile, closePanel])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (isDroneOpen) { setIsDroneOpen(false); return }
+        if (isSimulatorOpen) { setIsSimulatorOpen(false); return }
+        if (panel) { closePanel(); return }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [panel, isDroneOpen, isSimulatorOpen, closePanel])
 
   const handleFindNearestCamp = useCallback(async (caseObj) => {
     try {
@@ -1625,23 +2070,24 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         boxShadow: '0 2px 24px rgba(0,0,0,0.7), 0 1px 0 rgba(0,229,255,0.08)',
         display: 'flex', alignItems: 'stretch',
         height: isMobile ? 54 : 62,
+        overflow: 'hidden',
       }}>
         {/* Tactical Brand Emblem Logo */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 11,
-          padding: '0 18px',
+          display: 'flex', alignItems: 'center', gap: 9,
+          padding: '0 14px',
           borderRight: '1px solid rgba(0,229,255,0.12)',
           flexShrink: 0,
         }}>
           <div style={{
-            position: 'relative', width: 34, height: 34,
+            position: 'relative', width: 32, height: 32,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.3) 100%)',
             border: '1.5px solid rgba(0, 229, 255, 0.65)',
             borderRadius: 8,
             boxShadow: '0 0 16px rgba(0, 229, 255, 0.4), inset 0 0 8px rgba(0, 229, 255, 0.15)',
           }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L4 5.5V11.5C4 16.5 7.4 21.1 12 22.3C16.6 21.1 20 16.5 20 11.5V5.5L12 2Z"
                 stroke="#00E5FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="rgba(0, 229, 255, 0.12)" />
               <path d="M7 13C8.5 11.8 10 14.2 12 13C14 11.8 15.5 14.2 17 13"
@@ -1659,7 +2105,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             }}>
               SAHAYAK
             </div>
-            <div style={{ color: 'rgba(0,229,255,0.5)', fontSize: 8, fontWeight: 700, letterSpacing: '0.12em' }}>
+            <div className="brand-sub" style={{ color: 'rgba(0,229,255,0.5)', fontSize: 7.5, fontWeight: 700, letterSpacing: '0.12em' }}>
               FLOOD RESCUE COMMAND
             </div>
           </div>
@@ -1667,7 +2113,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
 
         {/* Metric tiles */}
         {!isMobile && (
-          <div style={{ display: 'flex', flex: 1, alignItems: 'stretch' }}>
+          <div className="header-metrics-container" style={{ display: 'flex', flex: '1 1 0', alignItems: 'stretch', minWidth: 0, overflow: 'hidden' }}>
             {/* Active SOS */}
             <div className="metric-card">
               <span className="metric-label">{t('metric.sos_label')}</span>
@@ -1714,27 +2160,28 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           </div>
         )}
 
-        {/* Right: LIVE badge + refresh + timestamp */}
+        {/* Right: LIVE badge + refresh + timestamp + controls */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px',
+          display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px',
           borderLeft: '1px solid rgba(0,229,255,0.1)',
           flexShrink: 0, marginLeft: 'auto',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div className="header-live-badge" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <motion.span
               animate={{ opacity: [1, 0.3, 1], scale: [1, 1.3, 1] }}
               transition={{ repeat: Infinity, duration: 1.4 }}
               style={{
-                display: 'inline-block', width: 7, height: 7,
+                display: 'inline-block', width: 6, height: 6,
                 borderRadius: '50%', background: '#00E5FF', boxShadow: '0 0 8px rgba(0,229,255,0.9)',
               }}
             />
-            <span style={{ color: '#00E5FF', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em' }}>LIVE</span>
+            <span style={{ color: '#00E5FF', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em' }}>LIVE</span>
           </div>
-          <div style={{ width: 1, height: 18, background: 'rgba(0,229,255,0.15)' }} />
-          <span style={{ color: '#555f70', fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}>
+
+          <span className="header-time-display" style={{ color: '#555f70', fontSize: 9.5, fontFamily: 'JetBrains Mono, monospace' }}>
             {lastUpdated ? fmtTime(lastUpdated) : '——:——'}
           </span>
+
           {/* Tactical Action Trays: SOS Simulator, Drone Recon, Audio */}
           <motion.button
             onClick={() => { audioFx.playTactile(); setIsSimulatorOpen(true) }}
@@ -1742,13 +2189,13 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             title="Voice SOS Intake & Live Surge Simulator"
             style={{
               background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.25) 100%)',
-              border: '1px solid var(--cyan)', borderRadius: 7, padding: '5px 10px',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-              color: 'var(--cyan)', fontSize: 11, fontWeight: 700,
+              border: '1px solid var(--cyan)', borderRadius: 7, padding: '4px 8px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+              color: 'var(--cyan)', fontSize: 10.5, fontWeight: 700, minHeight: 28,
             }}
           >
             <span>🎙️</span>
-            {!isMobile && <span>Voice SOS / Surge</span>}
+            <span className="header-btn-label">Voice SOS</span>
           </motion.button>
 
           <motion.button
@@ -1757,13 +2204,13 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             title="UAV Thermal Drone Reconnaissance"
             style={{
               background: 'linear-gradient(135deg, rgba(226, 75, 74, 0.15) 0%, rgba(185, 28, 28, 0.25) 100%)',
-              border: '1px solid #E24B4A', borderRadius: 7, padding: '5px 10px',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
-              color: '#fca5a5', fontSize: 11, fontWeight: 700,
+              border: '1px solid #E24B4A', borderRadius: 7, padding: '4px 8px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+              color: '#fca5a5', fontSize: 10.5, fontWeight: 700, minHeight: 28,
             }}
           >
             <span>🛰️</span>
-            {!isMobile && <span>Drone Recon</span>}
+            <span className="header-btn-label">Drone Recon</span>
           </motion.button>
 
           <motion.button
@@ -1775,7 +2222,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
               border: `1px solid ${isAudioMuted ? 'rgba(255,255,255,0.1)' : 'rgba(0,229,255,0.3)'}`,
               borderRadius: 7, width: 28, height: 28, cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: isAudioMuted ? '#64748b' : '#00E5FF', fontSize: 13,
+              color: isAudioMuted ? '#64748b' : '#00E5FF', fontSize: 12, flexShrink: 0,
             }}
           >
             {isAudioMuted ? '🔇' : '🔊'}
@@ -1788,11 +2235,12 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             style={{
               background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.2)',
               borderRadius: 7, width: 28, height: 28, cursor: refreshing ? 'default' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 13, flexShrink: 0,
             }}
           >
             <motion.span animate={refreshing ? { rotate: 360 } : {}} transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}>↻</motion.span>
           </motion.button>
+
           <motion.button
             onClick={() => setFitTrigger(t => t + 1)}
             whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
@@ -1800,21 +2248,23 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             style={{
               background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.2)',
               borderRadius: 7, width: 28, height: 28, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 14,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 13, flexShrink: 0,
             }}
           >
             ⊕
           </motion.button>
-          <LanguageSwitcher style={{ marginRight: 4 }} />
+
+          <LanguageSwitcher style={{ flexShrink: 0 }} />
+
           {isMobile && (
             <motion.button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               whileTap={{ scale: 0.94 }}
               style={{
                 background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.35)',
-                borderRadius: 8, color: '#00E5FF', padding: '5px 12px',
+                borderRadius: 8, color: '#00E5FF', padding: '4px 10px',
                 fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', gap: 6,
+                display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
               }}
             >
               ☰
@@ -2109,30 +2559,34 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
 
       {/* ── PERSISTENT LEFT SIDEBAR (DESKTOP) — MISSION CONTROL layout ── */}
       {!isMobile ? (
-        <div style={{
-          position: 'absolute',
-          top: 62, left: 0, bottom: 0,
-          width: 244,
-          zIndex: 15,
-          background: 'rgba(8,14,26,0.97)',
-          backdropFilter: 'blur(18px)',
-          borderRight: '1px solid rgba(0,229,255,0.14)',
-          boxShadow: '4px 0 24px rgba(0,0,0,0.5)',
-          display: 'flex', flexDirection: 'column',
-          overflowY: 'auto',
-        }}>
+        <div
+          className="sidebar-container"
+          style={{
+            position: 'absolute',
+            top: 62, left: 0, bottom: 0,
+            width: 230,
+            zIndex: 15,
+            background: 'rgba(8,14,26,0.97)',
+            backdropFilter: 'blur(18px)',
+            borderRight: '1px solid rgba(0,229,255,0.14)',
+            boxShadow: '4px 0 24px rgba(0,0,0,0.5)',
+            display: 'flex', flexDirection: 'column',
+            overflowY: 'auto',
+            scrollbarWidth: 'thin',
+          }}
+        >
           {/* Heading */}
-          <div style={{ padding: '18px 20px 10px' }}>
+          <div className="sidebar-heading" style={{ padding: '16px 18px 8px' }}>
             <div style={{ fontSize: 13, color: '#00E5FF', fontWeight: 700, letterSpacing: '0.08em' }}>
               {t('sidebar.title')}
             </div>
           </div>
 
           {/* Search bar */}
-          <div style={{
-            margin: '0 14px 12px', background: 'rgba(255,255,255,0.03)',
+          <div className="sidebar-search" style={{
+            margin: '0 12px 10px', background: 'rgba(255,255,255,0.03)',
             border: '1px solid rgba(0,229,255,0.14)',
-            borderRadius: 8, padding: '7px 10px',
+            borderRadius: 8, padding: '6px 10px',
             display: 'flex', alignItems: 'center', gap: 6,
           }}>
             <span style={{ color: '#00E5FF', fontSize: 12, opacity: 0.7 }}>🔍</span>
@@ -2186,9 +2640,6 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
 
           {/* MODULES group */}
           <SidebarGroupLabel>{t('sidebar.grp_modules')}</SidebarGroupLabel>
-          <SidebarRow onClick={onOpenTele}>
-            <span style={{ fontSize: 16 }}>📞</span> {t('sidebar.health_bridge')}
-          </SidebarRow>
           <SidebarRow onClick={onOpenAudit}>
             <span style={{ fontSize: 16 }}>📜</span> {t('sidebar.audit_log')}
           </SidebarRow>
@@ -2217,7 +2668,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             }}
           >
             {[
-              { key: 'queue',         icon: '📡', label: t('sidebar.queue') },
+              { key: 'queue',         icon: '🆘', label: t('sidebar.queue') },
               { key: 'insights',      icon: '🔥', label: t('mobile.worst_hit') },
               { key: 'camps',         icon: '🏕', label: t('sidebar.camps') },
               { key: 'reunification', icon: '🔍', label: t('mobile.missing') },
@@ -2236,13 +2687,10 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
 
             <div style={{ gridColumn: 'span 2', height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
 
-            <button onClick={() => { onOpenTele(); setMobileMenuOpen(false) }} style={btnStyle(false, true)}>
-              <span>📞</span> {t('mobile.tele')}
-            </button>
             <button onClick={() => { onOpenAudit(); setMobileMenuOpen(false) }} style={btnStyle(false, true)}>
               <span>📜</span> {t('mobile.audit')}
             </button>
-            <button onClick={() => { onOpenField(); setMobileMenuOpen(false) }} style={{ ...btnStyle(false, true), gridColumn: 'span 2' }}>
+            <button onClick={() => { onOpenField(); setMobileMenuOpen(false) }} style={btnStyle(false, true)}>
               <span>👷</span> {t('mobile.field')}
             </button>
           </motion.div>
@@ -2302,75 +2750,81 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
       )}
 
       {/* FULL-PAGE CONTENT AREA beside the sidebar (desktop) or full screen (mobile) */}
-      <AnimatePresence mode="wait">
-        {panel && (
-          <motion.div
-            key={panel}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.16 }}
-            style={fullPageStyle(isMobile)}
-          >
-            {isMobile && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
-                <button
-                  onClick={() => setPanel(null)}
-                  style={{
-                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8',
-                    width: 32, height: 32, borderRadius: '50%', cursor: 'pointer', fontSize: 18,
-                  }}
-                >
-                  ×
-                </button>
-              </div>
-            )}
+      {(panel || isExitingPanel) && (
+        <div
+          key="fullpage-panel-section"
+          className={isExitingPanel ? 'view-section-exit' : 'view-section-enter'}
+          style={fullPageStyle(isMobile)}
+        >
+          {/* Header Close button */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+            <button
+              onClick={() => closePanel()}
+              title="Return to Flood Map (Esc)"
+              style={{
+                background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#94a3b8',
+                height: 32, padding: '0 12px', borderRadius: 16, cursor: 'pointer', fontSize: 12,
+                display: 'inline-flex', alignItems: 'center', gap: 6, transition: 'all 0.15s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#94a3b8' }}
+            >
+              <span style={{ fontSize: 13 }}>✕</span>
+              <span>{t('btn.back') || 'Return to Map'}</span>
+            </button>
+          </div>
 
-            <FullPageShell>
-              {panel === 'queue' && (
-                <QueuePanel
-                  queue={queue}
-                  filter={filter}
-                  onFindNearestCamp={handleFindNearestCamp}
-                  onDispatchRescue={handleDispatchRescue}
-                  overdueCases={auditSummary?.overdue_cases}
-                />
-              )}
-              {panel === 'insights' && (
-                <InsightsPanel
-                  cases={caseFeatures}
-                  onLocateCase={(loc) => { setMapCenter(loc); setPanel(null) }}
-                />
-              )}
-              {panel === 'camps' && (
-                <CampsPanel
-                  camps={campsData}
-                  queue={queue}
-                  onFindRouteForCase={handleFindNearestCamp}
-                  selectedRoute={selectedRoute}
-                  onClearRoute={() => setSelectedRoute(null)}
-                  onHighlightCamp={(camp) => { handleHighlightCamp(camp); setPanel(null) }}
-                  hazardAlerts={auditSummary?.hazard_alerts}
-                />
-              )}
-              {panel === 'reunification' && (
-                <ReunificationPanel
-                  reports={missingReports}
-                  onReportSubmitted={fetchAll}
-                  onResolveReport={handleResolveReport}
-                />
-              )}
-              {panel === 'early_warning' && (
-                <EarlyWarningPanel
-                  riverGauges={riverGauges}
-                  predictions={riskPredictions}
-                  onDispatchAlert={handleDispatchAlert}
-                  alertToast={alertToast}
-                  onHighlightStation={(loc) => { setMapCenter(loc); setPanel(null) }}
-                />
-              )}
-            </FullPageShell>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          <FullPageShell
+            key={panel || 'active-subview'}
+            className={isSubSwap ? 'view-card-sub-swap' : 'view-card-stagger-in'}
+          >
+            {panel === 'queue' && (
+              <QueuePanel
+                queue={queue}
+                filter={filter}
+                onFindNearestCamp={handleFindNearestCamp}
+                onDispatchRescue={handleDispatchRescue}
+                overdueCases={auditSummary?.overdue_cases}
+                onConnectTele={(caseObj) => setActiveTeleCase(caseObj)}
+                activeTeleCaseId={activeTeleCase?.case_id}
+              />
+            )}
+            {panel === 'insights' && (
+              <InsightsPanel
+                cases={caseFeatures}
+                onLocateCase={(loc) => { setMapCenter(loc); closePanel() }}
+              />
+            )}
+            {panel === 'camps' && (
+              <CampsPanel
+                camps={campsData}
+                queue={queue}
+                onFindRouteForCase={handleFindNearestCamp}
+                selectedRoute={selectedRoute}
+                onClearRoute={() => setSelectedRoute(null)}
+                onHighlightCamp={(camp) => { handleHighlightCamp(camp); closePanel() }}
+                hazardAlerts={auditSummary?.hazard_alerts}
+              />
+            )}
+            {panel === 'reunification' && (
+              <ReunificationPanel
+                reports={missingReports}
+                onReportSubmitted={fetchAll}
+                onResolveReport={handleResolveReport}
+              />
+            )}
+            {panel === 'early_warning' && (
+              <EarlyWarningPanel
+                riverGauges={riverGauges}
+                predictions={riskPredictions}
+                onDispatchAlert={handleDispatchAlert}
+                alertToast={alertToast}
+                onHighlightStation={(loc) => { setMapCenter(loc); closePanel() }}
+              />
+            )}
+          </FullPageShell>
+        </div>
+      )}
 
       {/* UAV Drone Reconnaissance Modal */}
       <DroneReconModal
@@ -2385,6 +2839,46 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         onClose={() => setIsSimulatorOpen(false)}
         onCaseProcessed={() => fetchAll()}
       />
+
+      {/* Tele-Health & Maternity Bridge Modal */}
+      <AnimatePresence>
+        {activeTeleCase && (
+          <div
+            key="tele-health-modal-overlay"
+            className="view-section-enter"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 9999,
+              background: 'rgba(5, 10, 20, 0.78)',
+              backdropFilter: 'blur(16px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 20,
+            }}
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setActiveTeleCase(null)
+            }}
+          >
+            <div className="view-card-stagger-in" style={{ width: '100%', maxWidth: 500, maxHeight: '92vh', overflowY: 'auto' }}>
+              <TeleHealthBridge
+                caseData={(() => {
+                  if (queue?.tiers) {
+                    for (const cases of Object.values(queue.tiers)) {
+                      const found = cases.find(c => c.case_id === activeTeleCase.case_id)
+                      if (found) return found
+                    }
+                  }
+                  return activeTeleCase
+                })()}
+                onStatusChange={handleTeleStatusChange}
+                onClose={() => setActiveTeleCase(null)}
+              />
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -2392,11 +2886,14 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
 // ── Sidebar helper components ──────────────────────────────────────────────
 function SidebarGroupLabel({ children }) {
   return (
-    <div style={{
-      padding: '10px 20px 4px',
-      fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
-      color: 'rgba(0,229,255,0.4)', textTransform: 'uppercase',
-    }}>
+    <div
+      className="sidebar-group-label"
+      style={{
+        padding: '10px 18px 4px',
+        fontSize: 9, fontWeight: 700, letterSpacing: '0.12em',
+        color: 'rgba(0,229,255,0.4)', textTransform: 'uppercase',
+      }}
+    >
       {children}
     </div>
   )
@@ -2406,9 +2903,10 @@ function SidebarRow({ children, active, onClick }) {
   return (
     <button
       onClick={onClick}
+      className={`sidebar-row ${active ? 'active' : ''}`}
       style={{
         display: 'flex', alignItems: 'center', gap: 10,
-        width: '100%', padding: '9px 20px', border: 'none',
+        width: '100%', padding: '8px 18px', border: 'none',
         background: active ? 'rgba(0,229,255,0.1)' : 'transparent',
         borderLeft: active ? '3px solid #00E5FF' : '3px solid transparent',
         color: active ? '#00E5FF' : '#999',
@@ -2425,9 +2923,9 @@ function SidebarRow({ children, active, onClick }) {
 }
 
 // Full-page content area: sits beside the sidebar on desktop
-function FullPageShell({ children }) {
+function FullPageShell({ children, className = '' }) {
   return (
-    <div style={{ padding: '28px 28px 48px', maxWidth: 900 }}>
+    <div className={className} style={{ padding: '16px 24px 48px', maxWidth: 980, margin: '0 auto' }}>
       {children}
     </div>
   )
@@ -2471,12 +2969,12 @@ function fullPageStyle(isMobile) {
   return {
     position: 'absolute',
     top: isMobile ? 54 : 62,
-    left: isMobile ? 0 : 244,
+    left: isMobile ? 0 : 230,
     right: 0,
     bottom: 0,
     zIndex: 25,
     background: 'var(--bg-primary)',
     overflowY: 'auto',
-    padding: isMobile ? '16px' : '32px 28px 48px',
+    padding: isMobile ? '16px' : '24px 20px 48px',
   }
 }

@@ -267,7 +267,7 @@ export default function FieldWorkerPage({ onBack }) {
         </motion.div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+      <div className="view-card-stagger-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
         {/* Form Column */}
         <div>
           <div style={{
