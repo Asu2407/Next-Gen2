@@ -23,6 +23,8 @@ import { audioFx } from './utils/audioFx'
 import DroneReconModal from './components/DroneReconModal'
 import LiveIncidentSimulator from './components/LiveIncidentSimulator'
 import TeleHealthBridge from './TeleHealthBridge'
+import CitizenMobileHome from './components/CitizenMobileHome'
+import RescuerMobilePeekSheet from './components/RescuerMobilePeekSheet'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // Vite proxy → localhost:8000
@@ -1761,6 +1763,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
   // Mobile responsiveness state (<768px)
   const [isMobile, setIsMobile]           = useState(window.innerWidth < 768)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileRole, setMobileRole]       = useState('citizen') // 'citizen' | 'rescuer'
 
   const toggleAudio = useCallback(() => {
     const nextMuted = !isAudioMuted
@@ -2111,7 +2114,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           </div>
         </div>
 
-        {/* Metric tiles */}
+        {/* Metric tiles (Desktop only) */}
         {!isMobile && (
           <div className="header-metrics-container" style={{ display: 'flex', flex: '1 1 0', alignItems: 'stretch', minWidth: 0, overflow: 'hidden' }}>
             {/* Active SOS */}
@@ -2160,111 +2163,164 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           </div>
         )}
 
+        {/* Center / Role Switcher for Mobile */}
+        {isMobile && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flex: 1, minWidth: 0, padding: '0 6px',
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center',
+              background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(0,229,255,0.22)',
+              borderRadius: 20, padding: 2,
+            }}>
+              <button
+                onClick={() => { audioFx.playTactile(); setMobileRole('citizen') }}
+                style={{
+                  background: mobileRole === 'citizen'
+                    ? 'linear-gradient(135deg, rgba(226,75,74,0.3) 0%, rgba(226,75,74,0.15) 100%)'
+                    : 'transparent',
+                  border: mobileRole === 'citizen' ? '1px solid #E24B4A' : '1px solid transparent',
+                  color: mobileRole === 'citizen' ? '#fca5a5' : '#94a3b8',
+                  borderRadius: 16, padding: '4px 9px', fontSize: 10.5, fontWeight: 700,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                  transition: 'all 0.18s ease',
+                }}
+              >
+                <span>🆘</span>
+                <span>{t('role.citizen')}</span>
+              </button>
+              <button
+                onClick={() => { audioFx.playTactile(); setMobileRole('rescuer') }}
+                style={{
+                  background: mobileRole === 'rescuer'
+                    ? 'linear-gradient(135deg, rgba(0,229,255,0.25) 0%, rgba(2,132,199,0.2) 100%)'
+                    : 'transparent',
+                  border: mobileRole === 'rescuer' ? '1px solid #00E5FF' : '1px solid transparent',
+                  color: mobileRole === 'rescuer' ? '#00E5FF' : '#94a3b8',
+                  borderRadius: 16, padding: '4px 9px', fontSize: 10.5, fontWeight: 700,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                  transition: 'all 0.18s ease',
+                }}
+              >
+                <span>👷</span>
+                <span>{t('role.rescuer')}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Right: LIVE badge + refresh + timestamp + controls */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px',
+          display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px',
           borderLeft: '1px solid rgba(0,229,255,0.1)',
           flexShrink: 0, marginLeft: 'auto',
         }}>
-          <div className="header-live-badge" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-            <motion.span
-              animate={{ opacity: [1, 0.3, 1], scale: [1, 1.3, 1] }}
-              transition={{ repeat: Infinity, duration: 1.4 }}
-              style={{
-                display: 'inline-block', width: 6, height: 6,
-                borderRadius: '50%', background: '#00E5FF', boxShadow: '0 0 8px rgba(0,229,255,0.9)',
-              }}
-            />
-            <span style={{ color: '#00E5FF', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em' }}>LIVE</span>
-          </div>
+          {!isMobile && (
+            <>
+              <div className="header-live-badge" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <motion.span
+                  animate={{ opacity: [1, 0.3, 1], scale: [1, 1.3, 1] }}
+                  transition={{ repeat: Infinity, duration: 1.4 }}
+                  style={{
+                    display: 'inline-block', width: 6, height: 6,
+                    borderRadius: '50%', background: '#00E5FF', boxShadow: '0 0 8px rgba(0,229,255,0.9)',
+                  }}
+                />
+                <span style={{ color: '#00E5FF', fontSize: 9.5, fontWeight: 700, letterSpacing: '0.08em' }}>LIVE</span>
+              </div>
 
-          <span className="header-time-display" style={{ color: '#555f70', fontSize: 9.5, fontFamily: 'JetBrains Mono, monospace' }}>
-            {lastUpdated ? fmtTime(lastUpdated) : '——:——'}
-          </span>
+              <span className="header-time-display" style={{ color: '#555f70', fontSize: 9.5, fontFamily: 'JetBrains Mono, monospace' }}>
+                {lastUpdated ? fmtTime(lastUpdated) : '——:——'}
+              </span>
 
-          {/* Tactical Action Trays: SOS Simulator, Drone Recon, Audio */}
-          <motion.button
-            onClick={() => { audioFx.playTactile(); setIsSimulatorOpen(true) }}
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            title="Voice SOS Intake & Live Surge Simulator"
-            style={{
-              background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.25) 100%)',
-              border: '1px solid var(--cyan)', borderRadius: 7, padding: '4px 8px',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
-              color: 'var(--cyan)', fontSize: 10.5, fontWeight: 700, minHeight: 28,
-            }}
-          >
-            <span>🎙️</span>
-            <span className="header-btn-label">Voice SOS</span>
-          </motion.button>
+              {/* Tactical Action Trays: SOS Simulator, Drone Recon, Audio */}
+              <motion.button
+                onClick={() => { audioFx.playTactile(); setIsSimulatorOpen(true) }}
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                title="Voice SOS Intake & Live Surge Simulator"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.25) 100%)',
+                  border: '1px solid var(--cyan)', borderRadius: 7, padding: '4px 8px',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+                  color: 'var(--cyan)', fontSize: 10.5, fontWeight: 700, minHeight: 28,
+                }}
+              >
+                <span>🎙️</span>
+                <span className="header-btn-label">Voice SOS</span>
+              </motion.button>
 
-          <motion.button
-            onClick={() => { audioFx.playTactile(); setIsDroneOpen(true) }}
-            whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-            title="UAV Thermal Drone Reconnaissance"
-            style={{
-              background: 'linear-gradient(135deg, rgba(226, 75, 74, 0.15) 0%, rgba(185, 28, 28, 0.25) 100%)',
-              border: '1px solid #E24B4A', borderRadius: 7, padding: '4px 8px',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
-              color: '#fca5a5', fontSize: 10.5, fontWeight: 700, minHeight: 28,
-            }}
-          >
-            <span>🛰️</span>
-            <span className="header-btn-label">Drone Recon</span>
-          </motion.button>
+              <motion.button
+                onClick={() => { audioFx.playTactile(); setIsDroneOpen(true) }}
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                title="UAV Thermal Drone Reconnaissance"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(226, 75, 74, 0.15) 0%, rgba(185, 28, 28, 0.25) 100%)',
+                  border: '1px solid #E24B4A', borderRadius: 7, padding: '4px 8px',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5,
+                  color: '#fca5a5', fontSize: 10.5, fontWeight: 700, minHeight: 28,
+                }}
+              >
+                <span>🛰️</span>
+                <span className="header-btn-label">Drone Recon</span>
+              </motion.button>
 
-          <motion.button
-            onClick={toggleAudio}
-            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
-            title={isAudioMuted ? "Unmute Tactical Sound FX" : "Mute Tactical Sound FX"}
-            style={{
-              background: isAudioMuted ? 'rgba(255,255,255,0.04)' : 'rgba(0,229,255,0.1)',
-              border: `1px solid ${isAudioMuted ? 'rgba(255,255,255,0.1)' : 'rgba(0,229,255,0.3)'}`,
-              borderRadius: 7, width: 28, height: 28, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: isAudioMuted ? '#64748b' : '#00E5FF', fontSize: 12, flexShrink: 0,
-            }}
-          >
-            {isAudioMuted ? '🔇' : '🔊'}
-          </motion.button>
+              <motion.button
+                onClick={toggleAudio}
+                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
+                title={isAudioMuted ? "Unmute Tactical Sound FX" : "Mute Tactical Sound FX"}
+                style={{
+                  background: isAudioMuted ? 'rgba(255,255,255,0.04)' : 'rgba(0,229,255,0.1)',
+                  border: `1px solid ${isAudioMuted ? 'rgba(255,255,255,0.1)' : 'rgba(0,229,255,0.3)'}`,
+                  borderRadius: 7, width: 28, height: 28, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: isAudioMuted ? '#64748b' : '#00E5FF', fontSize: 12, flexShrink: 0,
+                }}
+              >
+                {isAudioMuted ? '🔇' : '🔊'}
+              </motion.button>
 
-          <motion.button
-            onClick={fetchAll} disabled={refreshing}
-            whileHover={refreshing ? {} : { scale: 1.1 }} whileTap={refreshing ? {} : { scale: 0.92 }}
-            title="Refresh data"
-            style={{
-              background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.2)',
-              borderRadius: 7, width: 28, height: 28, cursor: refreshing ? 'default' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 13, flexShrink: 0,
-            }}
-          >
-            <motion.span animate={refreshing ? { rotate: 360 } : {}} transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}>↻</motion.span>
-          </motion.button>
+              <motion.button
+                onClick={fetchAll} disabled={refreshing}
+                whileHover={refreshing ? {} : { scale: 1.1 }} whileTap={refreshing ? {} : { scale: 0.92 }}
+                title="Refresh data"
+                style={{
+                  background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.2)',
+                  borderRadius: 7, width: 28, height: 28, cursor: refreshing ? 'default' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 13, flexShrink: 0,
+                }}
+              >
+                <motion.span animate={refreshing ? { rotate: 360 } : {}} transition={{ repeat: Infinity, duration: 0.9, ease: 'linear' }}>↻</motion.span>
+              </motion.button>
 
-          <motion.button
-            onClick={() => setFitTrigger(t => t + 1)}
-            whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
-            title="Reset map view"
-            style={{
-              background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.2)',
-              borderRadius: 7, width: 28, height: 28, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 13, flexShrink: 0,
-            }}
-          >
-            ⊕
-          </motion.button>
+              <motion.button
+                onClick={() => setFitTrigger(t => t + 1)}
+                whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.92 }}
+                title="Reset map view"
+                style={{
+                  background: 'rgba(0,229,255,0.07)', border: '1px solid rgba(0,229,255,0.2)',
+                  borderRadius: 7, width: 28, height: 28, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#00E5FF', fontSize: 13, flexShrink: 0,
+                }}
+              >
+                ⊕
+              </motion.button>
+            </>
+          )}
 
           <LanguageSwitcher style={{ flexShrink: 0 }} />
 
           {isMobile && (
             <motion.button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              onClick={() => { audioFx.playTactile(); setMobileMenuOpen(!mobileMenuOpen) }}
               whileTap={{ scale: 0.94 }}
+              title="Menu"
               style={{
-                background: 'rgba(0,229,255,0.1)', border: '1px solid rgba(0,229,255,0.35)',
-                borderRadius: 8, color: '#00E5FF', padding: '4px 10px',
-                fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-                display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+                background: mobileMenuOpen ? 'rgba(0,229,255,0.25)' : 'rgba(0,229,255,0.1)',
+                border: '1px solid rgba(0,229,255,0.35)',
+                borderRadius: 8, color: '#00E5FF', padding: '5px 9px',
+                fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
               }}
             >
               ☰
@@ -2660,39 +2716,86 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           <motion.div
             initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
             style={{
-              position: 'absolute', top: 60, left: 12, right: 12, zIndex: 30,
+              position: 'absolute', top: 60, left: 12, right: 12, zIndex: 50,
               background: 'rgba(10,16,30,0.96)', backdropFilter: 'blur(20px)',
               border: '1px solid rgba(255,255,255,0.14)', borderRadius: 14,
               padding: 16, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8,
               boxShadow: '0 10px 30px rgba(0,0,0,0.8)',
             }}
           >
-            {[
-              { key: 'queue',         icon: '🆘', label: t('sidebar.queue') },
-              { key: 'insights',      icon: '🔥', label: t('mobile.worst_hit') },
-              { key: 'camps',         icon: '🏕', label: t('sidebar.camps') },
-              { key: 'reunification', icon: '🔍', label: t('mobile.missing') },
-              { key: 'early_warning', icon: '⚡', label: t('mobile.warning') },
-              { key: null,            icon: '🗺', label: t('mobile.map_only') },
-            ].map(btn => (
-              <button
-                key={btn.label}
-                onClick={() => handlePanelBtn(btn.key)}
-                style={btnStyle(btn.key !== null && panel === btn.key)}
-              >
-                <span style={{ fontSize: 14 }}>{btn.icon}</span>
-                {btn.label}
-              </button>
-            ))}
+            {mobileRole === 'citizen' ? (
+              <>
+                <button
+                  onClick={() => { setIsSimulatorOpen(true); setMobileMenuOpen(false) }}
+                  style={btnStyle(false, false)}
+                >
+                  <span style={{ fontSize: 16 }}>🎙️</span>
+                  <span>{t('citizen.sos_btn')}</span>
+                </button>
+                <button
+                  onClick={() => handlePanelBtn('camps')}
+                  style={btnStyle(panel === 'camps')}
+                >
+                  <span style={{ fontSize: 16 }}>🏕️</span>
+                  <span>{t('sidebar.camps')}</span>
+                </button>
+                <button
+                  onClick={() => handlePanelBtn('reunification')}
+                  style={btnStyle(panel === 'reunification')}
+                >
+                  <span style={{ fontSize: 16 }}>👨‍👩‍👧</span>
+                  <span>{t('sidebar.missing')}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    const criticalCase = (queue?.tiers?.['Tier 1'] || [])[0] || (queue?.tiers?.['Tier 2'] || [])[0]
+                    if (criticalCase) setActiveTeleCase(criticalCase)
+                    else showToast('Connecting to emergency tele-care triage...')
+                    setMobileMenuOpen(false)
+                  }}
+                  style={btnStyle(false)}
+                >
+                  <span style={{ fontSize: 16 }}>🩺</span>
+                  <span>{t('citizen.doctor_title')}</span>
+                </button>
+                <button
+                  onClick={() => { handlePanelBtn(null); setMobileRole('rescuer') }}
+                  style={{ ...btnStyle(false, true), gridColumn: 'span 2' }}
+                >
+                  <span style={{ fontSize: 16 }}>🗺️</span>
+                  <span>{t('citizen.view_map')}</span>
+                </button>
+              </>
+            ) : (
+              <>
+                {[
+                  { key: 'queue',         icon: '🆘', label: t('sidebar.queue') },
+                  { key: 'insights',      icon: '🔥', label: t('mobile.worst_hit') },
+                  { key: 'camps',         icon: '🏕️', label: t('sidebar.camps') },
+                  { key: 'reunification', icon: '🔍', label: t('mobile.missing') },
+                  { key: 'early_warning', icon: '⚡', label: t('mobile.warning') },
+                  { key: null,            icon: '🗺️', label: t('mobile.map_only') },
+                ].map(btn => (
+                  <button
+                    key={btn.label}
+                    onClick={() => handlePanelBtn(btn.key)}
+                    style={btnStyle(btn.key !== null && panel === btn.key)}
+                  >
+                    <span style={{ fontSize: 14 }}>{btn.icon}</span>
+                    {btn.label}
+                  </button>
+                ))}
 
-            <div style={{ gridColumn: 'span 2', height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
+                <div style={{ gridColumn: 'span 2', height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
 
-            <button onClick={() => { onOpenAudit(); setMobileMenuOpen(false) }} style={btnStyle(false, true)}>
-              <span>📜</span> {t('mobile.audit')}
-            </button>
-            <button onClick={() => { onOpenField(); setMobileMenuOpen(false) }} style={btnStyle(false, true)}>
-              <span>👷</span> {t('mobile.field')}
-            </button>
+                <button onClick={() => { onOpenAudit(); setMobileMenuOpen(false) }} style={btnStyle(false, true)}>
+                  <span>📜</span> {t('mobile.audit')}
+                </button>
+                <button onClick={() => { onOpenField(); setMobileMenuOpen(false) }} style={btnStyle(false, true)}>
+                  <span>👷</span> {t('mobile.field')}
+                </button>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -2747,6 +2850,47 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             <span className="status-pill status-safe">{t('tier.safe').toUpperCase()}</span>
           </div>
         </div>
+      )}
+
+      {/* ── MOBILE CITIZEN HOME OVERLAY (When on mobile, Citizen mode & no subpanel open) ── */}
+      {isMobile && mobileRole === 'citizen' && !panel && !isExitingPanel && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 54, left: 0, right: 0, bottom: 0,
+            zIndex: 15,
+            background: 'rgba(8, 14, 26, 0.96)',
+            backdropFilter: 'blur(20px)',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          <CitizenMobileHome
+            camps={campsData}
+            riverGauges={riverGauges}
+            onOpenVoiceSOS={() => { audioFx.playTactile(); setIsSimulatorOpen(true) }}
+            onOpenCamps={() => handlePanelBtn('camps')}
+            onOpenMissing={() => handlePanelBtn('reunification')}
+            onOpenDoctor={() => {
+              const criticalCase = (queue?.tiers?.['Tier 1'] || [])[0] || (queue?.tiers?.['Tier 2'] || [])[0]
+              if (criticalCase) setActiveTeleCase(criticalCase)
+              else showToast('Connecting to emergency tele-care triage...')
+            }}
+            onSwitchToRescuer={() => { audioFx.playTactile(); setMobileRole('rescuer') }}
+          />
+        </div>
+      )}
+
+      {/* ── MOBILE RESCUER PEEK SHEET (When on mobile, Rescuer mode & no subpanel open) ── */}
+      {isMobile && mobileRole === 'rescuer' && !panel && !isExitingPanel && (
+        <RescuerMobilePeekSheet
+          queue={queue}
+          onOpenQueue={() => handlePanelBtn('queue')}
+          onOpenDrone={() => { audioFx.playTactile(); setIsDroneOpen(true) }}
+          onDispatchRescue={handleDispatchRescue}
+          onFindNearestCamp={handleFindNearestCamp}
+          onConnectTele={(caseObj) => setActiveTeleCase(caseObj)}
+        />
       )}
 
       {/* FULL-PAGE CONTENT AREA beside the sidebar (desktop) or full screen (mobile) */}

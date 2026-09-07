@@ -474,6 +474,43 @@ body, html {
   .metric-value { font-size: 16px; }
 }
 
+/* ── Mobile Dual-Persona Styles ───────────────────────────────────────────── */
+@keyframes pulse-sos {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(226, 75, 74, 0.35), inset 0 0 10px rgba(226, 75, 74, 0.15);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(226, 75, 74, 0.65), inset 0 0 16px rgba(226, 75, 74, 0.3);
+    transform: scale(1.012);
+  }
+}
+
+.citizen-sos-card {
+  animation: pulse-sos 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .citizen-sos-card {
+    animation: none !important;
+  }
+}
+
+.rescuer-bottom-drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 25;
+  background: rgba(8, 14, 26, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.85);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ── Dashboard Background Canvas ──────────────────────────────────────────── */
 /* Hydrographic Contour Drift — sits at z-index 0, behind all glass panels.   */
 /* Uses only --cyan (#00E5FF) from the token palette at very low alpha.        */

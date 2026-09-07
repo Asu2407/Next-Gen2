@@ -234,6 +234,27 @@ const T = {
   'panel.rising':     { en: '↗ RISING',      hi: '↗ बढ़ रहा है',  as: '↗ বৃদ্ধি' },
   'panel.falling':    { en: '↘ FALLING',     hi: '↘ गिर रहा है',  as: '↘ হ্ৰাস' },
   'panel.stable':     { en: '→ STABLE',      hi: '→ स्थिर',       as: '→ স্থিৰ' },
+
+  // ── Mobile Dual-Persona (Citizen vs. Rescuer) ──────────────────────────────
+  'role.citizen':          { en: 'I Need Help',         hi: 'मदद चाहिए',             as: 'সহায় লাগে' },
+  'role.rescuer':          { en: 'Rescuer Mode',        hi: 'बचावकर्ता',             as: 'উদ্ধাৰকাৰী' },
+  'citizen.hero_title':    { en: 'Emergency Flood Relief', hi: 'आपातकालीन बाढ़ राहत', as: 'জৰুৰীকালীন বান সাহায্য' },
+  'citizen.location':      { en: 'Assam Flood Response Zone', hi: 'असम बाढ़ राहत क्षेत्र', as: 'অসম বান সাহায্য ক্ষেত্ৰ' },
+  'citizen.status_warning':{ en: 'High Flood Alert · Water levels rising rapidly', hi: 'उच्च बाढ़ चेतावनी · जलस्तर तेजी से बढ़ रहा है', as: 'উচ্চ বান সতৰ্কবাৰ্তা · জলস্তৰ দ্ৰুতগতিত বৃদ্ধি পাইছে' },
+  'citizen.sos_btn':       { en: 'TAP TO SPEAK SOS',    hi: 'बोलकर मदद मांगें (SOS)', as: 'কৈ সহায় বিচাৰক (SOS)' },
+  'citizen.sos_sub':       { en: 'Speak in Assamese, Hindi, or English · Instant Rescue Dispatch', hi: 'असमिया, हिंदी या अंग्रेजी में बोलें · तुरंत बचाव दल भेजा जाएगा', as: 'অসমীয়া, হিন্দী বা ইংৰাজীত কওক · লগে লগে উদ্ধাৰকাৰী দল প্ৰেৰণ' },
+  'citizen.camp_title':    { en: 'Nearest Safe Relief Camp', hi: 'निकटतम सुरक्षित राहत शिविर', as: 'নিকটৱৰ্তী সুৰক্ষিত সকাহ শিবিৰ' },
+  'citizen.camp_badge':    { en: 'Elevated Safe Ground · Open Now', hi: 'ऊंचा सुरक्षित स्थान · अभी खुला है', as: 'উচ্চ সুৰক্ষিত স্থান · এতিয়া খোলা আছে' },
+  'citizen.view_camp':     { en: 'View Shelter Details & Directions ➔', hi: 'शिविर का विवरण और दिशा ➔', as: 'শিবিৰৰ বিৱৰণ আৰু পথ ➔' },
+  'citizen.missing_title': { en: 'Find Missing Family',  hi: 'लापता परिजनों को खोजें', as: 'নিখোঁজ পৰিয়ালক সন্ধান কৰক' },
+  'citizen.missing_sub':   { en: 'Check survivor registry across camps', hi: 'शिविरों में पंजीकृत लोगों को खोजें', as: 'শিবিৰসমূহত পঞ্জীভুক্ত লোকক বিচাৰক' },
+  'citizen.doctor_title':  { en: 'Call Emergency Doctor', hi: 'आपातकालीन डॉक्टर से बात करें', as: 'জৰুৰীকালীন চিকিৎসকক কল কৰক' },
+  'citizen.doctor_sub':    { en: 'Free maternity & acute tele-care', hi: 'मुफ्त मातृत्व और आपातकालीन टेली-केयर', as: 'বিনামূলীয়া মাতৃত্ব আৰু জৰুৰীকালীন টেলি-সেৱা' },
+  'citizen.helpline_title':{ en: 'Emergency 24x7 Helplines', hi: 'आपातकालीन 24x7 हेल्पलाइन', as: 'জৰুৰীকালীন 24x7 হেল্পলাইন' },
+  'citizen.view_map':      { en: 'View Live Flood Map ➔', hi: 'लाइव बाढ़ नक्शा देखें ➔', as: 'লাইভ বান মানচিত্ৰ চাওক ➔' },
+  'rescuer.peek_title':    { en: 'Active Priority Dispatch Queue', hi: 'सक्रिय प्राथमिकता बचाव कतार', as: 'সক্ৰিয় অগ্ৰাধিকাৰ উদ্ধাৰ শাৰী' },
+  'rescuer.open_queue':    { en: 'Open Queue',          hi: 'कतार खोलें',            as: 'শাৰী খোলক' },
+  'rescuer.drone':         { en: 'Drone Recon',         hi: 'ड्रोन रेकी',            as: 'ড্ৰোন ৰেকন' },
 }
 
 export default T
