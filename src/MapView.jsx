@@ -2073,12 +2073,12 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         boxShadow: '0 2px 24px rgba(0,0,0,0.7), 0 1px 0 rgba(0,229,255,0.08)',
         display: 'flex', alignItems: 'stretch',
         height: isMobile ? 54 : 62,
-        overflow: 'hidden',
+        overflow: isMobile ? 'visible' : 'hidden',
       }}>
         {/* Tactical Brand Emblem Logo */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 9,
-          padding: '0 14px',
+          display: 'flex', alignItems: 'center', gap: 7,
+          padding: isMobile ? '0 8px' : '0 14px',
           borderRight: '1px solid rgba(0,229,255,0.12)',
           flexShrink: 0,
         }}>
@@ -2100,19 +2100,21 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
               <circle cx="12" cy="7.5" r="1.8" fill="#00E5FF" />
             </svg>
           </div>
-          <div>
-            <div style={{
-              color: '#00E5FF', fontSize: 13, fontWeight: 900,
-              letterSpacing: '0.06em', lineHeight: 1.1,
-              textShadow: '0 0 10px rgba(0, 229, 255, 0.5)'
-            }}>
-              SAHAYAK
-            </div>
-            <div className="brand-sub" style={{ color: 'rgba(0,229,255,0.5)', fontSize: 7.5, fontWeight: 700, letterSpacing: '0.12em' }}>
-              FLOOD RESCUE COMMAND
+            <div>
+              <div style={{
+                color: '#00E5FF', fontSize: 13, fontWeight: 900,
+                letterSpacing: '0.06em', lineHeight: 1.1,
+                textShadow: '0 0 10px rgba(0, 229, 255, 0.5)'
+              }}>
+                SAHAYAK
+              </div>
+              {!isMobile && (
+                <div className="brand-sub" style={{ color: 'rgba(0,229,255,0.5)', fontSize: 7.5, fontWeight: 700, letterSpacing: '0.12em' }}>
+                  FLOOD RESCUE COMMAND
+                </div>
+              )}
             </div>
           </div>
-        </div>
 
         {/* Metric tiles (Desktop only) */}
         {!isMobile && (
@@ -2182,9 +2184,10 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                     : 'transparent',
                   border: mobileRole === 'citizen' ? '1px solid #E24B4A' : '1px solid transparent',
                   color: mobileRole === 'citizen' ? '#fca5a5' : '#94a3b8',
-                  borderRadius: 16, padding: '4px 9px', fontSize: 10.5, fontWeight: 700,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                  borderRadius: 16, padding: '3px 6px', fontSize: 10, fontWeight: 700,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3,
                   transition: 'all 0.18s ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 <span>🆘</span>
@@ -2198,9 +2201,10 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                     : 'transparent',
                   border: mobileRole === 'rescuer' ? '1px solid #00E5FF' : '1px solid transparent',
                   color: mobileRole === 'rescuer' ? '#00E5FF' : '#94a3b8',
-                  borderRadius: 16, padding: '4px 9px', fontSize: 10.5, fontWeight: 700,
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
+                  borderRadius: 16, padding: '3px 6px', fontSize: 10, fontWeight: 700,
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3,
                   transition: 'all 0.18s ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 <span>👷</span>
@@ -2215,6 +2219,8 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px',
           borderLeft: '1px solid rgba(0,229,255,0.1)',
           flexShrink: 0, marginLeft: 'auto',
+          overflow: isMobile ? 'visible' : 'hidden',
+          position: 'relative',
         }}>
           {!isMobile && (
             <>
@@ -2308,7 +2314,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             </>
           )}
 
-          <LanguageSwitcher style={{ flexShrink: 0 }} />
+          <LanguageSwitcher isMobile={isMobile} style={{ flexShrink: 0 }} />
 
           {isMobile && (
             <motion.button

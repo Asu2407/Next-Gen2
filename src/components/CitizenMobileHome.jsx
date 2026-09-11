@@ -41,6 +41,7 @@ export default function CitizenMobileHome({
     >
       {/* ── 1. LOCAL FLOOD ALERT BANNER ── */}
       <div
+        className="river-surge-banner"
         style={{
           background: 'rgba(239, 159, 39, 0.12)',
           border: '1px solid rgba(239, 159, 39, 0.35)',
@@ -49,14 +50,44 @@ export default function CitizenMobileHome({
           display: 'flex',
           alignItems: 'center',
           gap: 10,
+          position: 'relative',
         }}
       >
-        <span style={{ fontSize: 22, flexShrink: 0 }}>🌊</span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-            {t('citizen.location')}
+        {/* Living background water wave graphic */}
+        <div className="river-wave-track">
+          <svg width="100%" height="100%" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path
+              d="M0,40 C150,80 350,0 500,40 C650,80 850,0 1000,40 C1150,80 1200,50 1200,50 L1200,120 L0,120 Z"
+              fill="#EF9F27"
+            />
+          </svg>
+        </div>
+
+        <motion.span
+          animate={{ scale: [1, 1.15, 1], rotate: [0, 4, -4, 0] }}
+          transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}
+          style={{ fontSize: 24, flexShrink: 0, position: 'relative', zIndex: 1 }}
+        >
+          🌊
+        </motion.span>
+        <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 10, fontWeight: 800, color: '#f59e0b', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              {t('citizen.location')}
+            </span>
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: '#f59e0b',
+                display: 'inline-block',
+                boxShadow: '0 0 6px #f59e0b',
+                animation: 'beacon-glow 1.5s infinite',
+              }}
+            />
           </div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#f8fafc', lineHeight: 1.3 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#f8fafc', lineHeight: 1.3, marginTop: 2 }}>
             {criticalGauge
               ? `${criticalGauge.station_name}: ${t('map.rate_of_rise')} +${criticalGauge.rate_of_rise_cm_per_hour}cm/h (${t('citizen.status_warning')})`
               : t('citizen.status_warning')}
@@ -67,45 +98,55 @@ export default function CitizenMobileHome({
       {/* ── 2. HERO EMERGENCY VOICE SOS BUTTON (THE BIG RED ACTION) ── */}
       <motion.button
         onClick={onOpenVoiceSOS}
-        whileTap={{ scale: 0.97 }}
+        whileTap={{ scale: 0.96 }}
         className="citizen-sos-card"
         style={{
           width: '100%',
-          background: 'linear-gradient(135deg, rgba(226,75,74,0.22) 0%, rgba(15,20,35,0.95) 100%)',
+          background: 'linear-gradient(135deg, rgba(226,75,74,0.25) 0%, rgba(15,20,35,0.96) 100%)',
           border: '2px solid #E24B4A',
           borderRadius: 18,
-          padding: '20px 16px',
+          padding: '24px 16px',
           cursor: 'pointer',
           textAlign: 'center',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 10,
+          gap: 12,
           color: '#ffffff',
           position: 'relative',
           overflow: 'hidden',
           fontFamily: 'inherit',
         }}
       >
-        {/* Pulsing visual core icon */}
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            background: '#E24B4A',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 32,
-            boxShadow: '0 0 24px rgba(226,75,74,0.8), inset 0 0 10px rgba(255,255,255,0.3)',
-          }}
-        >
-          🎙️
+        {/* Core microphone with acoustic radiating ripple waves */}
+        <div style={{ position: 'relative', width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Concentric expanding acoustic pulse waves */}
+          <div className="sos-ripple-ring" style={{ width: 70, height: 70 }} />
+          <div className="sos-ripple-ring" style={{ width: 70, height: 70 }} />
+          <div className="sos-ripple-ring" style={{ width: 70, height: 70 }} />
+
+          {/* Center pulsating button core */}
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 2,
+              width: 62,
+              height: 62,
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 30,
+              boxShadow: '0 0 28px rgba(226,75,74,0.9), inset 0 0 12px rgba(255,255,255,0.4)',
+            }}
+          >
+            🎙️
+          </div>
         </div>
 
-        <div>
-          <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: '0.04em', color: '#ffffff', textTransform: 'uppercase' }}>
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div style={{ fontSize: 19, fontWeight: 900, letterSpacing: '0.05em', color: '#ffffff', textTransform: 'uppercase' }}>
             {t('citizen.sos_btn')}
           </div>
           <div style={{ fontSize: 11.5, color: '#fca5a5', marginTop: 4, lineHeight: 1.35, maxWidth: 340 }}>
@@ -115,17 +156,23 @@ export default function CitizenMobileHome({
 
         <div
           style={{
-            background: 'rgba(226,75,74,0.3)',
-            border: '1px solid rgba(226,75,74,0.5)',
+            position: 'relative',
+            zIndex: 2,
+            background: 'rgba(226,75,74,0.28)',
+            border: '1px solid rgba(226,75,74,0.55)',
             borderRadius: 20,
-            padding: '3px 12px',
+            padding: '4px 14px',
             fontSize: 10,
             fontWeight: 700,
             color: '#fecaca',
             letterSpacing: '0.06em',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
           }}
         >
-          ⚡ AUTO-DETECTS GPS & DISPATCHES RESCUE BOATS
+          <span>⚡</span>
+          <span>AUTO-DETECTS GPS & DISPATCHES RESCUE BOATS</span>
         </div>
       </motion.button>
 

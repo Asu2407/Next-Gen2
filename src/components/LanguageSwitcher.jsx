@@ -1,17 +1,147 @@
 /**
  * SAHAYAK — Language Switcher
- * A compact 3-button pill (EN · हि · অস).
+ * - Desktop: Compact 3-button pill (EN · हि · অস)
+ * - Mobile: Ultra-compact dropdown menu with subtle arrow, saving precious top-bar space
  * Styled with existing design tokens: --panel-bg, --panel-border, --cyan.
- * Position: top-right of any page header. Pass className/style to override placement.
  */
 
-import React from 'react'
-import { motion } from 'framer-motion'
+import React, { useState, useRef, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useLang } from '../i18n/LangContext'
 
-export default function LanguageSwitcher({ style = {} }) {
+export default function LanguageSwitcher({ isMobile = false, style = {} }) {
   const { lang, setLang, langs } = useLang()
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const dropdownRef = useRef(null)
 
+  const currentLang = langs.find(l => l.code === lang) || langs[0]
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false)
+      }
+    }
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('touchstart', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
+  }, [dropdownOpen])
+
+  // ── MOBILE DROPDOWN VERSION ──
+  if (isMobile) {
+    return (
+      <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block', flexShrink: 0, ...style }}>
+        <motion.button
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+          whileTap={{ scale: 0.94 }}
+          aria-haspopup="listbox"
+          aria-expanded={dropdownOpen}
+          aria-label="Select language"
+          title={`Language: ${currentLang.native}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '4px 8px',
+            minHeight: 28,
+            background: dropdownOpen ? 'rgba(0,229,255,0.2)' : 'rgba(8,14,26,0.7)',
+            border: `1px solid ${dropdownOpen ? 'var(--cyan)' : 'var(--panel-border)'}`,
+            borderRadius: 8,
+            color: 'var(--cyan)',
+            fontSize: 11.5,
+            fontWeight: 700,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+            outline: 'none',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <span>🌐</span>
+          <span>{currentLang.label}</span>
+          <span style={{ fontSize: 9, opacity: 0.75, transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }}>
+            ▼
+          </span>
+        </motion.button>
+
+        <AnimatePresence>
+          {dropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -6, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.95 }}
+              transition={{ duration: 0.15, ease: 'easeOut' }}
+              role="listbox"
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 6px)',
+                right: 0,
+                zIndex: 60,
+                background: 'rgba(10,16,30,0.96)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                border: '1px solid rgba(0,229,255,0.3)',
+                borderRadius: 10,
+                padding: '4px',
+                minWidth: 100,
+                boxShadow: '0 8px 24px rgba(0,0,0,0.85), 0 0 12px rgba(0,229,255,0.15)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+              }}
+            >
+              {langs.map((l) => {
+                const isActive = lang === l.code
+                return (
+                  <button
+                    key={l.code}
+                    role="option"
+                    aria-selected={isActive}
+                    onClick={() => {
+                      setLang(l.code)
+                      setDropdownOpen(false)
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '7px 10px',
+                      background: isActive ? 'rgba(0,229,255,0.15)' : 'transparent',
+                      border: 'none',
+                      borderRadius: 6,
+                      color: isActive ? 'var(--cyan)' : '#cbd5e1',
+                      fontSize: 12,
+                      fontWeight: isActive ? 700 : 500,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                      transition: 'background 0.12s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.background = 'transparent'
+                    }}
+                  >
+                    <span>{l.native}</span>
+                    <span style={{ fontSize: 10, opacity: 0.6, fontWeight: 700 }}>{l.label}</span>
+                  </button>
+                )
+              })}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    )
+  }
+
+  // ── DESKTOP PILL VERSION ──
   return (
     <div
       role="group"
@@ -55,7 +185,6 @@ export default function LanguageSwitcher({ style = {} }) {
               transition: 'background 0.18s ease, color 0.18s ease',
               outline: 'none',
             }}
-            // Keyboard focus ring using outline (not box-shadow to avoid blur on text)
             onFocus={e => { e.currentTarget.style.outline = '2px solid var(--cyan)'; e.currentTarget.style.outlineOffset = '-2px' }}
             onBlur={e => { e.currentTarget.style.outline = 'none' }}
           >

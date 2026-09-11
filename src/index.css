@@ -481,8 +481,39 @@ body, html {
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 32px rgba(226, 75, 74, 0.65), inset 0 0 16px rgba(226, 75, 74, 0.3);
-    transform: scale(1.012);
+    box-shadow: 0 0 36px rgba(226, 75, 74, 0.7), inset 0 0 18px rgba(226, 75, 74, 0.35);
+    transform: scale(1.015);
+  }
+}
+
+@keyframes ripple-wave {
+  0% {
+    transform: translate(-50%, -50%) scale(0.85);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes river-flow {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes beacon-glow {
+  0%, 100% {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px #f59e0b);
+  }
+  50% {
+    opacity: 0.4;
+    filter: drop-shadow(0 0 12px #f59e0b);
   }
 }
 
@@ -490,8 +521,45 @@ body, html {
   animation: pulse-sos 2.6s ease-in-out infinite;
 }
 
+.sos-ripple-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(226, 75, 74, 0.6);
+  pointer-events: none;
+  animation: ripple-wave 2.8s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+}
+
+.sos-ripple-ring:nth-child(2) {
+  animation-delay: 0.9s;
+}
+
+.sos-ripple-ring:nth-child(3) {
+  animation-delay: 1.8s;
+}
+
+.river-surge-banner {
+  position: relative;
+  overflow: hidden;
+}
+
+.river-wave-track {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0.08;
+  display: flex;
+  animation: river-flow 12s linear infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .citizen-sos-card {
+  .citizen-sos-card,
+  .sos-ripple-ring,
+  .river-wave-track {
     animation: none !important;
   }
 }
