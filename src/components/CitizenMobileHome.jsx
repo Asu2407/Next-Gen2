@@ -1,6 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { useLang } from '../i18n/LangContext'
+import SafetyGuidanceAccordion from './SafetyGuidanceAccordion'
 
 export default function CitizenMobileHome({
   onOpenVoiceSOS,
@@ -30,12 +31,12 @@ export default function CitizenMobileHome({
       className="mobile-hero-container view-section-enter"
       style={{
         width: '100%',
-        maxWidth: 520,
+        maxWidth: 540,
         margin: '0 auto',
-        padding: '12px 14px 44px',
+        padding: 'clamp(8px, 2.5vw, 14px) clamp(10px, 3vw, 16px) clamp(24px, 6vh, 48px)',
         display: 'flex',
         flexDirection: 'column',
-        gap: 14,
+        gap: 'clamp(8px, 2vh, 14px)',
         fontFamily: 'inherit',
       }}
     >
@@ -46,10 +47,10 @@ export default function CitizenMobileHome({
           background: 'rgba(239, 159, 39, 0.12)',
           border: '1px solid rgba(239, 159, 39, 0.35)',
           borderRadius: 12,
-          padding: '10px 14px',
+          padding: 'clamp(8px, 2vw, 12px) clamp(10px, 2.8vw, 14px)',
           display: 'flex',
           alignItems: 'center',
-          gap: 10,
+          gap: 'clamp(8px, 2.2vw, 12px)',
           position: 'relative',
         }}
       >
@@ -66,13 +67,13 @@ export default function CitizenMobileHome({
         <motion.span
           animate={{ scale: [1, 1.15, 1], rotate: [0, 4, -4, 0] }}
           transition={{ repeat: Infinity, duration: 2.4, ease: 'easeInOut' }}
-          style={{ fontSize: 24, flexShrink: 0, position: 'relative', zIndex: 1 }}
+          style={{ fontSize: 'clamp(20px, 5.5vw, 26px)', flexShrink: 0, position: 'relative', zIndex: 1 }}
         >
           🌊
         </motion.span>
         <div style={{ flex: 1, minWidth: 0, position: 'relative', zIndex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 10, fontWeight: 800, color: '#f59e0b', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: 'clamp(9px, 2.4vw, 10.5px)', fontWeight: 800, color: '#f59e0b', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
               {t('citizen.location')}
             </span>
             <span
@@ -87,7 +88,7 @@ export default function CitizenMobileHome({
               }}
             />
           </div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#f8fafc', lineHeight: 1.3, marginTop: 2 }}>
+          <div style={{ fontSize: 'clamp(11px, 2.9vw, 12.5px)', fontWeight: 600, color: '#f8fafc', lineHeight: 1.3, marginTop: 2 }}>
             {criticalGauge
               ? `${criticalGauge.station_name}: ${t('map.rate_of_rise')} +${criticalGauge.rate_of_rise_cm_per_hour}cm/h (${t('citizen.status_warning')})`
               : t('citizen.status_warning')}
@@ -105,13 +106,13 @@ export default function CitizenMobileHome({
           background: 'linear-gradient(135deg, rgba(226,75,74,0.25) 0%, rgba(15,20,35,0.96) 100%)',
           border: '2px solid #E24B4A',
           borderRadius: 18,
-          padding: '24px 16px',
+          padding: 'clamp(14px, 3.5vh, 22px) clamp(12px, 3vw, 16px)',
           cursor: 'pointer',
           textAlign: 'center',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 12,
+          gap: 'clamp(8px, 1.8vh, 12px)',
           color: '#ffffff',
           position: 'relative',
           overflow: 'hidden',
@@ -119,25 +120,25 @@ export default function CitizenMobileHome({
         }}
       >
         {/* Core microphone with acoustic radiating ripple waves */}
-        <div style={{ position: 'relative', width: 72, height: 72, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', width: 'clamp(58px, 14vw, 72px)', height: 'clamp(58px, 14vw, 72px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {/* Concentric expanding acoustic pulse waves */}
-          <div className="sos-ripple-ring" style={{ width: 70, height: 70 }} />
-          <div className="sos-ripple-ring" style={{ width: 70, height: 70 }} />
-          <div className="sos-ripple-ring" style={{ width: 70, height: 70 }} />
+          <div className="sos-ripple-ring" style={{ width: '100%', height: '100%' }} />
+          <div className="sos-ripple-ring" style={{ width: '100%', height: '100%' }} />
+          <div className="sos-ripple-ring" style={{ width: '100%', height: '100%' }} />
 
           {/* Center pulsating button core */}
           <div
             style={{
               position: 'relative',
               zIndex: 2,
-              width: 62,
-              height: 62,
+              width: 'clamp(50px, 12vw, 62px)',
+              height: 'clamp(50px, 12vw, 62px)',
               borderRadius: '50%',
               background: 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 30,
+              fontSize: 'clamp(24px, 6vw, 30px)',
               boxShadow: '0 0 28px rgba(226,75,74,0.9), inset 0 0 12px rgba(255,255,255,0.4)',
             }}
           >
@@ -146,10 +147,10 @@ export default function CitizenMobileHome({
         </div>
 
         <div style={{ position: 'relative', zIndex: 2 }}>
-          <div style={{ fontSize: 19, fontWeight: 900, letterSpacing: '0.05em', color: '#ffffff', textTransform: 'uppercase' }}>
+          <div style={{ fontSize: 'clamp(16px, 4.4vw, 19px)', fontWeight: 900, letterSpacing: '0.05em', color: '#ffffff', textTransform: 'uppercase' }}>
             {t('citizen.sos_btn')}
           </div>
-          <div style={{ fontSize: 11.5, color: '#fca5a5', marginTop: 4, lineHeight: 1.35, maxWidth: 340 }}>
+          <div style={{ fontSize: 'clamp(10.5px, 2.7vw, 11.5px)', color: '#fca5a5', marginTop: 3, lineHeight: 1.35, maxWidth: 340 }}>
             {t('citizen.sos_sub')}
           </div>
         </div>
@@ -161,14 +162,14 @@ export default function CitizenMobileHome({
             background: 'rgba(226,75,74,0.28)',
             border: '1px solid rgba(226,75,74,0.55)',
             borderRadius: 20,
-            padding: '4px 14px',
-            fontSize: 10,
+            padding: '3px 10px',
+            fontSize: 'clamp(8.5px, 2.2vw, 10px)',
             fontWeight: 700,
             color: '#fecaca',
-            letterSpacing: '0.06em',
+            letterSpacing: '0.04em',
             display: 'flex',
             alignItems: 'center',
-            gap: 6,
+            gap: 5,
           }}
         >
           <span>⚡</span>
@@ -183,16 +184,16 @@ export default function CitizenMobileHome({
           backdropFilter: 'blur(16px)',
           border: '1px solid rgba(0, 229, 255, 0.2)',
           borderRadius: 14,
-          padding: '14px 16px',
+          padding: 'clamp(10px, 2.5vw, 14px) clamp(12px, 3vw, 16px)',
           boxShadow: '0 6px 24px rgba(0,0,0,0.5)',
         }}
       >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--cyan)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 'clamp(9px, 2.3vw, 10px)', fontWeight: 700, color: 'var(--cyan)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               {t('citizen.camp_title')}
             </div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9', marginTop: 2 }}>
+            <div style={{ fontSize: 'clamp(12px, 3.2vw, 14px)', fontWeight: 700, color: '#f1f5f9', marginTop: 2 }}>
               🏕️ {nearestCamp.name}
             </div>
           </div>
@@ -201,10 +202,11 @@ export default function CitizenMobileHome({
               background: 'rgba(99, 153, 34, 0.2)',
               color: '#4ade80',
               border: '1px solid rgba(99, 153, 34, 0.4)',
-              fontSize: 9.5,
+              fontSize: 'clamp(8.5px, 2.2vw, 9.5px)',
               fontWeight: 700,
-              padding: '2px 8px',
+              padding: '2px 7px',
               borderRadius: 12,
+              whiteSpace: 'nowrap',
             }}
           >
             {t('citizen.camp_badge')}
@@ -212,14 +214,14 @@ export default function CitizenMobileHome({
         </div>
 
         {/* Amenity tags */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '8px 0 12px' }}>
-          <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', padding: '3px 8px', borderRadius: 6 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, margin: '6px 0 10px' }}>
+          <span style={{ fontSize: 'clamp(9px, 2.3vw, 10px)', background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', padding: '2px 6px', borderRadius: 6 }}>
             🍞 {t('map.relief_camp')}: {nearestCamp.capacity - nearestCamp.current_occupancy} {t('map.beds')}
           </span>
-          <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', padding: '3px 8px', borderRadius: 6 }}>
+          <span style={{ fontSize: 'clamp(9px, 2.3vw, 10px)', background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', padding: '2px 6px', borderRadius: 6 }}>
             💧 Safe Drinking Water
           </span>
-          <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', padding: '3px 8px', borderRadius: 6 }}>
+          <span style={{ fontSize: 'clamp(9px, 2.3vw, 10px)', background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', padding: '2px 6px', borderRadius: 6 }}>
             🩺 Medical Officers Active
           </span>
         </div>
@@ -231,9 +233,9 @@ export default function CitizenMobileHome({
             background: 'linear-gradient(90deg, rgba(0,229,255,0.15) 0%, rgba(2,132,199,0.25) 100%)',
             border: '1px solid #00E5FF',
             borderRadius: 10,
-            padding: '10px 14px',
+            padding: 'clamp(7px, 1.8vh, 10px) 12px',
             color: '#00E5FF',
-            fontSize: 12,
+            fontSize: 'clamp(11px, 2.8vw, 12px)',
             fontWeight: 700,
             cursor: 'pointer',
             display: 'flex',
@@ -249,7 +251,7 @@ export default function CitizenMobileHome({
       </div>
 
       {/* ── 4. TWO ESSENTIAL CIVILIAN HUBS (GRID) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'clamp(6px, 2vw, 10px)' }}>
         {/* Missing Family Card */}
         <motion.button
           onClick={onOpenMissing}
@@ -258,26 +260,26 @@ export default function CitizenMobileHome({
             background: 'rgba(15, 23, 42, 0.85)',
             border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 14,
-            padding: '14px 12px',
+            padding: 'clamp(10px, 2.5vw, 14px) clamp(8px, 2vw, 12px)',
             cursor: 'pointer',
             textAlign: 'left',
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
+            gap: 6,
             color: 'inherit',
             fontFamily: 'inherit',
           }}
         >
-          <div style={{ fontSize: 24 }}>👨‍👩‍👧</div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)' }}>👨‍👩‍👧</div>
           <div>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#f8fafc' }}>
+            <div style={{ fontSize: 'clamp(11px, 2.8vw, 12.5px)', fontWeight: 700, color: '#f8fafc' }}>
               {t('citizen.missing_title')}
             </div>
-            <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 2, lineHeight: 1.3 }}>
+            <div style={{ fontSize: 'clamp(9px, 2.3vw, 10px)', color: '#94a3b8', marginTop: 2, lineHeight: 1.3 }}>
               {t('citizen.missing_sub')}
             </div>
           </div>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#38bdf8', marginTop: 'auto' }}>
+          <div style={{ fontSize: 'clamp(9.5px, 2.4vw, 10.5px)', fontWeight: 700, color: '#38bdf8', marginTop: 'auto' }}>
             Check List ➔
           </div>
         </motion.button>
@@ -290,26 +292,26 @@ export default function CitizenMobileHome({
             background: 'rgba(15, 23, 42, 0.85)',
             border: '1px solid rgba(244,63,94,0.3)',
             borderRadius: 14,
-            padding: '14px 12px',
+            padding: 'clamp(10px, 2.5vw, 14px) clamp(8px, 2vw, 12px)',
             cursor: 'pointer',
             textAlign: 'left',
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
+            gap: 6,
             color: 'inherit',
             fontFamily: 'inherit',
           }}
         >
-          <div style={{ fontSize: 24 }}>🩺</div>
+          <div style={{ fontSize: 'clamp(18px, 5vw, 24px)' }}>🩺</div>
           <div>
-            <div style={{ fontSize: 12.5, fontWeight: 700, color: '#f8fafc' }}>
+            <div style={{ fontSize: 'clamp(11px, 2.8vw, 12.5px)', fontWeight: 700, color: '#f8fafc' }}>
               {t('citizen.doctor_title')}
             </div>
-            <div style={{ fontSize: 10, color: '#fda4af', marginTop: 2, lineHeight: 1.3 }}>
+            <div style={{ fontSize: 'clamp(9px, 2.3vw, 10px)', color: '#fda4af', marginTop: 2, lineHeight: 1.3 }}>
               {t('citizen.doctor_sub')}
             </div>
           </div>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: '#f43f5e', marginTop: 'auto' }}>
+          <div style={{ fontSize: 'clamp(9.5px, 2.4vw, 10.5px)', fontWeight: 700, color: '#f43f5e', marginTop: 'auto' }}>
             Call Doctor ➔
           </div>
         </motion.button>
@@ -321,13 +323,13 @@ export default function CitizenMobileHome({
           background: 'rgba(8, 14, 26, 0.75)',
           border: '1px solid rgba(255,255,255,0.08)',
           borderRadius: 12,
-          padding: '10px 14px',
+          padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 14px)',
         }}
       >
-        <div style={{ fontSize: 9.5, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
+        <div style={{ fontSize: 'clamp(8.5px, 2.2vw, 9.5px)', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
           📞 {t('citizen.helpline_title')}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'clamp(4px, 1.2vw, 6px)' }}>
           <a
             href="tel:1070"
             style={{
@@ -335,16 +337,16 @@ export default function CitizenMobileHome({
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 8,
-              padding: '6px 4px',
+              padding: 'clamp(4px, 1vh, 6px) 2px',
               textAlign: 'center',
               color: '#f1f5f9',
-              fontSize: 11,
+              fontSize: 'clamp(9.5px, 2.4vw, 11px)',
               fontWeight: 700,
               display: 'block',
             }}
           >
-            <div>SDRF Control</div>
-            <div style={{ color: 'var(--cyan)', fontSize: 12 }}>1070</div>
+            <div>SDRF</div>
+            <div style={{ color: 'var(--cyan)', fontSize: 'clamp(10.5px, 2.8vw, 12px)' }}>1070</div>
           </a>
           <a
             href="tel:1078"
@@ -353,16 +355,16 @@ export default function CitizenMobileHome({
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 8,
-              padding: '6px 4px',
+              padding: 'clamp(4px, 1vh, 6px) 2px',
               textAlign: 'center',
               color: '#f1f5f9',
-              fontSize: 11,
+              fontSize: 'clamp(9.5px, 2.4vw, 11px)',
               fontWeight: 700,
               display: 'block',
             }}
           >
-            <div>NDRF Rescue</div>
-            <div style={{ color: '#f59e0b', fontSize: 12 }}>1078</div>
+            <div>NDRF</div>
+            <div style={{ color: '#f59e0b', fontSize: 'clamp(10.5px, 2.8vw, 12px)' }}>1078</div>
           </a>
           <a
             href="tel:108"
@@ -371,42 +373,54 @@ export default function CitizenMobileHome({
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.1)',
               borderRadius: 8,
-              padding: '6px 4px',
+              padding: 'clamp(4px, 1vh, 6px) 2px',
               textAlign: 'center',
               color: '#f1f5f9',
-              fontSize: 11,
+              fontSize: 'clamp(9.5px, 2.4vw, 11px)',
               fontWeight: 700,
               display: 'block',
             }}
           >
             <div>Ambulance</div>
-            <div style={{ color: '#f43f5e', fontSize: 12 }}>108</div>
+            <div style={{ color: '#f43f5e', fontSize: 'clamp(10.5px, 2.8vw, 12px)' }}>108</div>
           </a>
         </div>
       </div>
 
-      {/* ── 6. VIEW FLOOD MAP SHORTCUT (SWITCH TO RESCUER/TACTICAL VIEW) ── */}
-      <button
-        onClick={onSwitchToRescuer}
-        style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '1px dashed rgba(0,229,255,0.3)',
-          borderRadius: 10,
-          padding: '10px 14px',
-          color: '#94a3b8',
-          fontSize: 11.5,
-          fontWeight: 600,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 6,
-          fontFamily: 'inherit',
-        }}
-      >
-        <span>🗺️</span>
-        <span>{t('citizen.view_map')}</span>
-      </button>
+      {/* ── 6. VISUAL "WHAT TO DO WHILE WAITING" ACCORDION (SAFETY FIRST) ── */}
+      <SafetyGuidanceAccordion />
+
+      {/* ── 7. SWIPE / MAP SWITCH SHORTCUT ── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <button
+          onClick={onSwitchToRescuer}
+          style={{
+            background: 'linear-gradient(90deg, rgba(0,229,255,0.08) 0%, rgba(2,132,199,0.15) 100%)',
+            border: '1px solid rgba(0,229,255,0.3)',
+            borderRadius: 10,
+            padding: 'clamp(8px, 1.8vh, 10px) 14px',
+            color: 'var(--cyan)',
+            fontSize: 'clamp(10.5px, 2.6vw, 11.5px)',
+            fontWeight: 700,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 6,
+            fontFamily: 'inherit',
+            transition: 'all 0.15s ease',
+          }}
+        >
+          <span>🗺️</span>
+          <span>{t('citizen.view_map')}</span>
+        </button>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: '#64748b', fontSize: 'clamp(8.5px, 2.2vw, 9.5px)', padding: '2px 0' }}>
+          <span>👈</span>
+          <span>{t('swipe.hint')}</span>
+          <span>👉</span>
+        </div>
+      </div>
     </div>
   )
 }

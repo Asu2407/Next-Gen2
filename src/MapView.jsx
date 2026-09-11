@@ -25,6 +25,7 @@ import LiveIncidentSimulator from './components/LiveIncidentSimulator'
 import TeleHealthBridge from './TeleHealthBridge'
 import CitizenMobileHome from './components/CitizenMobileHome'
 import RescuerMobilePeekSheet from './components/RescuerMobilePeekSheet'
+import DistrictCampSearch from './components/DistrictCampSearch'
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''  // Vite proxy → localhost:8000
@@ -1764,6 +1765,56 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
   const [isMobile, setIsMobile]           = useState(window.innerWidth < 768)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [mobileRole, setMobileRole]       = useState('citizen') // 'citizen' | 'rescuer'
+  const [activeLocation, setActiveLocation] = useState(null) // Active district or camp search filter
+
+  // Touch swipe gesture refs for persona switching
+  const touchStartX = useRef(0)
+  const touchStartY = useRef(0)
+
+  const handleTouchStart = useCallback((e) => {
+    if (e.touches && e.touches.length > 0) {
+      touchStartX.current = e.touches[0].clientX
+      touchStartY.current = e.touches[0].clientY
+    }
+  }, [])
+
+  const handleTouchEnd = useCallback((e) => {
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      const diffX = e.changedTouches[0].clientX - touchStartX.current
+      const diffY = e.changedTouches[0].clientY - touchStartY.current
+      // If horizontal swipe is significant (>55px) and greater than vertical movement
+      if (Math.abs(diffX) > 55 && Math.abs(diffX) > Math.abs(diffY) * 1.25) {
+        if (diffX < -55 && mobileRole === 'citizen') {
+          audioFx.playTactile()
+          setMobileRole('rescuer')
+          showToast('👷 Switched to Rescuer Mode')
+        } else if (diffX > 55 && mobileRole === 'rescuer') {
+          audioFx.playTactile()
+          setMobileRole('citizen')
+          showToast('🆘 Switched to Citizen Mode')
+        }
+      }
+    }
+  }, [mobileRole])
+
+  const handleSelectLocation = useCallback((loc) => {
+    setActiveLocation(loc)
+    if (loc.lat && loc.lng) {
+      setMapCenter([loc.lat, loc.lng])
+    }
+    if (loc.district) {
+      setFilter(loc.district)
+    }
+    audioFx.playTactile()
+    showToast(`📍 Focused on ${loc.title || loc.district}`)
+  }, [])
+
+  const handleClearLocation = useCallback(() => {
+    setActiveLocation(null)
+    setFilter('')
+    setFitTrigger(t => t + 1)
+    audioFx.playTactile()
+  }, [])
 
   const toggleAudio = useCallback(() => {
     const nextMuted = !isAudioMuted
@@ -2053,11 +2104,15 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
   if (!mapData)             return <LoadingScreen />
 
   return (
-    <div style={{
-      width: '100vw', height: '100vh', position: 'relative',
-      background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans','Inter',sans-serif",
-      overflow: 'hidden',
-    }}>
+    <div
+      onTouchStart={isMobile ? handleTouchStart : undefined}
+      onTouchEnd={isMobile ? handleTouchEnd : undefined}
+      style={{
+        width: '100vw', height: '100vh', position: 'relative',
+        background: 'var(--bg-primary)', fontFamily: "'Plus Jakarta Sans','Inter',sans-serif",
+        overflow: 'hidden',
+      }}
+    >
 
       {/* Radar sweep */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}>
@@ -2077,20 +2132,21 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
       }}>
         {/* Tactical Brand Emblem Logo */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 7,
-          padding: isMobile ? '0 8px' : '0 14px',
+          display: 'flex', alignItems: 'center', gap: 'clamp(4px, 1.5vw, 7px)',
+          padding: isMobile ? '0 clamp(4px, 1.5vw, 8px)' : '0 14px',
           borderRight: '1px solid rgba(0,229,255,0.12)',
           flexShrink: 0,
         }}>
           <div style={{
-            position: 'relative', width: 32, height: 32,
+            position: 'relative', width: isMobile ? 28 : 32, height: isMobile ? 28 : 32,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             background: 'linear-gradient(135deg, rgba(0, 229, 255, 0.15) 0%, rgba(2, 132, 199, 0.3) 100%)',
             border: '1.5px solid rgba(0, 229, 255, 0.65)',
             borderRadius: 8,
             boxShadow: '0 0 16px rgba(0, 229, 255, 0.4), inset 0 0 8px rgba(0, 229, 255, 0.15)',
+            flexShrink: 0,
           }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width={isMobile ? 15 : 18} height={isMobile ? 15 : 18} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M12 2L4 5.5V11.5C4 16.5 7.4 21.1 12 22.3C16.6 21.1 20 16.5 20 11.5V5.5L12 2Z"
                 stroke="#00E5FF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="rgba(0, 229, 255, 0.12)" />
               <path d="M7 13C8.5 11.8 10 14.2 12 13C14 11.8 15.5 14.2 17 13"
@@ -2102,8 +2158,8 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
           </div>
             <div>
               <div style={{
-                color: '#00E5FF', fontSize: 13, fontWeight: 900,
-                letterSpacing: '0.06em', lineHeight: 1.1,
+                color: '#00E5FF', fontSize: 'clamp(11px, 3.2vw, 13px)', fontWeight: 900,
+                letterSpacing: '0.05em', lineHeight: 1.1,
                 textShadow: '0 0 10px rgba(0, 229, 255, 0.5)'
               }}>
                 SAHAYAK
@@ -2169,12 +2225,12 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
         {isMobile && (
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flex: 1, minWidth: 0, padding: '0 6px',
+            flex: 1, minWidth: 0, padding: '0 clamp(2px, 1vw, 6px)',
           }}>
             <div style={{
               display: 'flex', alignItems: 'center',
               background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(0,229,255,0.22)',
-              borderRadius: 20, padding: 2,
+              borderRadius: 20, padding: 2, gap: 2,
             }}>
               <button
                 onClick={() => { audioFx.playTactile(); setMobileRole('citizen') }}
@@ -2184,7 +2240,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                     : 'transparent',
                   border: mobileRole === 'citizen' ? '1px solid #E24B4A' : '1px solid transparent',
                   color: mobileRole === 'citizen' ? '#fca5a5' : '#94a3b8',
-                  borderRadius: 16, padding: '3px 6px', fontSize: 10, fontWeight: 700,
+                  borderRadius: 16, padding: '3px clamp(4px, 1.4vw, 7px)', fontSize: 'clamp(9px, 2.4vw, 10.5px)', fontWeight: 700,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3,
                   transition: 'all 0.18s ease',
                   whiteSpace: 'nowrap',
@@ -2201,7 +2257,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
                     : 'transparent',
                   border: mobileRole === 'rescuer' ? '1px solid #00E5FF' : '1px solid transparent',
                   color: mobileRole === 'rescuer' ? '#00E5FF' : '#94a3b8',
-                  borderRadius: 16, padding: '3px 6px', fontSize: 10, fontWeight: 700,
+                  borderRadius: 16, padding: '3px clamp(4px, 1.4vw, 7px)', fontSize: 'clamp(9px, 2.4vw, 10.5px)', fontWeight: 700,
                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 3,
                   transition: 'all 0.18s ease',
                   whiteSpace: 'nowrap',
@@ -2216,12 +2272,23 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
 
         {/* Right: LIVE badge + refresh + timestamp + controls */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 6, padding: '0 8px',
+          display: 'flex', alignItems: 'center', gap: 'clamp(3px, 1.2vw, 6px)', padding: '0 clamp(4px, 1.5vw, 8px)',
           borderLeft: '1px solid rgba(0,229,255,0.1)',
           flexShrink: 0, marginLeft: 'auto',
           overflow: isMobile ? 'visible' : 'hidden',
           position: 'relative',
         }}>
+          {/* Quick Search & Filter by District/Camp in Header */}
+          <DistrictCampSearch
+            camps={campsData}
+            cases={caseFeatures}
+            onSelectLocation={handleSelectLocation}
+            activeLocation={activeLocation}
+            onClearLocation={handleClearLocation}
+            isMobile={isMobile}
+            style={{ flexShrink: 0 }}
+          />
+
           {!isMobile && (
             <>
               <div className="header-live-badge" style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -2860,7 +2927,13 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
 
       {/* ── MOBILE CITIZEN HOME OVERLAY (When on mobile, Citizen mode & no subpanel open) ── */}
       {isMobile && mobileRole === 'citizen' && !panel && !isExitingPanel && (
-        <div
+        <motion.div
+          initial={{ opacity: 0, x: -24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -24 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           style={{
             position: 'absolute',
             top: 54, left: 0, right: 0, bottom: 0,
@@ -2884,7 +2957,7 @@ export default function MapView({ onOpenTele, onOpenAudit, onOpenField }) {
             }}
             onSwitchToRescuer={() => { audioFx.playTactile(); setMobileRole('rescuer') }}
           />
-        </div>
+        </motion.div>
       )}
 
       {/* ── MOBILE RESCUER PEEK SHEET (When on mobile, Rescuer mode & no subpanel open) ── */}

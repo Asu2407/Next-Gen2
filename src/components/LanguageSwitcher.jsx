@@ -46,14 +46,14 @@ export default function LanguageSwitcher({ isMobile = false, style = {} }) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 4,
-            padding: '4px 8px',
+            gap: 3,
+            padding: '4px clamp(4px, 1.4vw, 7px)',
             minHeight: 28,
             background: dropdownOpen ? 'rgba(0,229,255,0.2)' : 'rgba(8,14,26,0.7)',
             border: `1px solid ${dropdownOpen ? 'var(--cyan)' : 'var(--panel-border)'}`,
             borderRadius: 8,
             color: 'var(--cyan)',
-            fontSize: 11.5,
+            fontSize: 'clamp(10px, 2.7vw, 11.5px)',
             fontWeight: 700,
             cursor: 'pointer',
             fontFamily: 'inherit',
@@ -61,9 +61,9 @@ export default function LanguageSwitcher({ isMobile = false, style = {} }) {
             transition: 'all 0.15s ease',
           }}
         >
-          <span>🌐</span>
+          <span style={{ fontSize: 'clamp(11px, 2.8vw, 13px)' }}>🌐</span>
           <span>{currentLang.label}</span>
-          <span style={{ fontSize: 9, opacity: 0.75, transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }}>
+          <span style={{ fontSize: 8, opacity: 0.75, transform: dropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s ease' }}>
             ▼
           </span>
         </motion.button>

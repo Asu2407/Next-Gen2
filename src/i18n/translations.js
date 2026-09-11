@@ -255,6 +255,28 @@ const T = {
   'rescuer.peek_title':    { en: 'Active Priority Dispatch Queue', hi: 'सक्रिय प्राथमिकता बचाव कतार', as: 'সক্ৰিয় অগ্ৰাধিকাৰ উদ্ধাৰ শাৰী' },
   'rescuer.open_queue':    { en: 'Open Queue',          hi: 'कतार खोलें',            as: 'শাৰী খোলক' },
   'rescuer.drone':         { en: 'Drone Recon',         hi: 'ड्रोन रेकी',            as: 'ড্ৰোন ৰেকন' },
+
+  // ── Safety Accordion ("What To Do While Waiting") ───────────────────────
+  'safety.title':          { en: 'What To Do While Waiting for Rescue', hi: 'बचाव दल की प्रतीक्षा करते समय क्या करें', as: 'উদ্ধাৰকাৰী দলৰ অপেক্ষাত থকা সময়ত কি কৰিব' },
+  'safety.sub':            { en: 'Essential flood survival protocol', hi: 'बाढ़ सुरक्षा के आवश्यक नियम', as: 'বানপানী সুৰক্ষাৰ প্ৰয়োজনীয় নিয়ম' },
+  'safety.power_title':    { en: 'Electrical & Gas Safety', hi: 'बिजली और गैस सुरक्षा', as: 'বিদ্যুৎ আৰু গেছ সুৰক্ষা' },
+  'safety.power_desc':     { en: 'Turn off main electrical breaker and LPG cylinder valves immediately before water reaches switchboards. Never touch wires while wet.', hi: 'पानी स्विचबोर्ड तक पहुंचने से पहले मुख्य बिजली ब्रेकर और एलपीजी सिलेंडर बंद कर दें। गीले होने पर तारों को न छुएं।', as: 'পানী চুইচবৰ্ডলৈ পোৱাৰ পূৰ্বেই মূল বিদ্যুৎ ব্ৰেকাৰ আৰু চিলিণ্ডাৰ বন্ধ কৰক। তিতা অৱস্থাত কোনো তাৰ নুচুৱিব।' },
+  'safety.high_ground_title': { en: 'Vertical Evacuation & Rooftops', hi: 'ऊंचे स्थान या छत पर जाएं', as: 'উচ্চ স্থান বা ছাদলৈ স্থানান্তৰ' },
+  'safety.high_ground_desc':  { en: 'Move to the highest floor or concrete roof. Avoid locked attics without roof access. Keep a bright cloth, whistle, or torch to signal rescue boats and drones.', hi: 'ऊपरी मंजिल या पक्की छत पर जाएं। बंद अटारी में न फंसे। बचाव नावों और ड्रोनों को संकेत देने के लिए चमकदार कपड़ा, सीटी या टॉर्च रखें।', as: 'ওপৰৰ মহলা বা পকী ছাদলৈ যাওক। ছাদলৈ যোৱাৰ বাট নথকা বন্ধ কোঠাত নাথাকিব। সংকেত দিবলৈ কাপোৰ, হুইচেল বা টৰ্চ ব্যৱহাৰ কৰক।' },
+  'safety.water_title':    { en: 'Drinking Water & Sanitation', hi: 'पीने का पानी और स्वच्छता', as: 'খোৱা পানী আৰু অনাময়' },
+  'safety.water_desc':     { en: 'Never drink raw floodwater (cholera risk). Use chlorine water purification tablets or boil for 1 minute. Keep emergency dry rations sealed.', hi: 'बाढ़ का कच्चा पानी कभी न पिएं। क्लोरीन की गोलियों का उपयोग करें या पानी उबालें। सूखा भोजन सुरक्षित प्लास्टिक बैग में रखें।', as: 'বানপানীৰ কেঁচা পানী কেতিয়াও নাখাব। ক্ল’ৰিন টেবলেট ব্যৱহাৰ কৰক বা পানী উতলাই লওক। শুকান খাদ্য পলিথিনত বন্ধ কৰি ৰাখক।' },
+  'safety.battery_title':  { en: 'Phone Battery & Signal Conservation', hi: 'फोन बैटरी और सिग्नल बचाएं', as: 'ফোন বেটাৰী সংৰক্ষণ' },
+  'safety.battery_desc':   { en: 'Enable Ultra Battery Saver mode and reduce screen brightness. Turn off hotspot. Send SMS/SOS instead of making long video calls.', hi: 'अल्ट्रा बैटरी सेवर चालू करें। हॉटस्पॉट बंद रखें। लंबे कॉल के बजाय एसएमएस या संक्षिप्त वॉइस एसओएस भेजें।', as: 'আল্ট্ৰা বেটাৰী ছেভাৰ অন কৰক। হটস্পট বন্ধ ৰাখক। দীঘলীয়া কথাৰ পৰিৱৰ্তে এছ এম এছ বা সংক্ষিপ্ত SOS দিয়ক।' },
+  'safety.maternity_title':{ en: 'Maternity, Infants & Elders', hi: 'गर्भवती, शिशु और बुजुर्ग देखभाल', as: 'গৰ্ভৱতী, শিশু আৰু বয়োজ্যেষ্ঠৰ যত্ন' },
+  'safety.maternity_desc': { en: 'Keep dry blankets, clean towels, and maternal medical records sealed. Tap "Call Emergency Doctor" to connect to on-duty obstetricians.', hi: 'सूखे कंबल, साफ तौलिए और मेडिकल पर्चे सुरक्षित रखें। ड्यूटी पर तैनात डॉक्टर से बात करने के लिए "डॉक्टर कॉल" पर टैप करें।', as: 'শুকান কাপোৰ আৰু প্ৰসূতিৰ চিকিৎসা নথিপত্ৰ সুৰক্ষিত ৰাখক। কৰ্তব্যৰত চিকিৎসকৰ সৈতে কথা পাতিবলৈ "চিকিৎসক কল" টিপক।' },
+
+  // ── Search & Filter ────────────────────────────────────────────────────────
+  'search.placeholder':    { en: 'Search district or camp (e.g. Silchar, Majuli)...', hi: 'ज़िला या शिविर खोजें (जैसे सिलचर, माजुली)...', as: 'জিলা বা শিবিৰ সন্ধান কৰক (যেনে শিলচৰ, মাজুলী)...' },
+  'search.all_districts':  { en: 'All Districts', hi: 'सभी ज़िले', as: 'সকলো জিলা' },
+  'search.clear':          { en: 'Clear Filter', hi: 'फ़िल्टर साफ़ करें', as: 'ফিল্টাৰ পৰিষ্কাৰ কৰক' },
+  'search.results':        { en: 'Quick Locations', hi: 'त्वरित स्थान', as: 'দ্ৰুত স্থান' },
+  'search.no_match':       { en: 'No matching districts or camps found', hi: 'कोई मेल खाता ज़िला या शिविर नहीं मिला', as: 'কোনো জিলা বা শিবিৰ পোৱা নগ’ল' },
+  'swipe.hint':            { en: 'Swipe left/right to switch personas', hi: 'नागरिक / बचावकर्ता मोड बदलने के लिए स्वाइप करें', as: 'নাগৰিক / উদ্ধাৰকাৰী মোড সলনি কৰিবলৈ ছোৱাইপ কৰক' },
 }
 
 export default T

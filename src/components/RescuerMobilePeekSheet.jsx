@@ -111,18 +111,18 @@ export default function RescuerMobilePeekSheet({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             style={{
-              padding: '0 14px 28px',
+              padding: '0 clamp(10px, 2.5vw, 14px) 24px',
               overflowY: 'auto',
               flex: 1,
               minHeight: 0,
               display: 'flex',
               flexDirection: 'column',
-              gap: 12,
+              gap: 'clamp(8px, 1.8vh, 12px)',
               WebkitOverflowScrolling: 'touch',
             }}
           >
             {/* Quick Vulnerability Filter Chips */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto', padding: '6px 2px 8px', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflowX: 'auto', padding: '4px 2px 6px', flexShrink: 0 }}>
               {[
                 { key: 'pregnant', label: '🤰 Pregnant' },
                 { key: 'infant',   label: '👶 Infants' },
@@ -138,9 +138,9 @@ export default function RescuerMobilePeekSheet({
                       background: isActive ? 'rgba(0,229,255,0.22)' : 'rgba(255,255,255,0.06)',
                       border: `1px solid ${isActive ? '#00E5FF' : 'rgba(255,255,255,0.14)'}`,
                       borderRadius: 14,
-                      padding: '5px 10px',
+                      padding: '4px clamp(8px, 2vw, 12px)',
                       color: isActive ? '#00E5FF' : '#94a3b8',
-                      fontSize: 11,
+                      fontSize: 'clamp(10px, 2.6vw, 11.5px)',
                       fontWeight: 700,
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
@@ -154,7 +154,7 @@ export default function RescuerMobilePeekSheet({
               {activeVulnFilter && (
                 <button
                   onClick={() => setActiveVulnFilter(null)}
-                  style={{ background: 'none', border: 'none', color: '#00E5FF', fontSize: 10, cursor: 'pointer' }}
+                  style={{ background: 'none', border: 'none', color: '#00E5FF', fontSize: 11, cursor: 'pointer', padding: '0 4px' }}
                 >
                   ✕
                 </button>
@@ -174,22 +174,22 @@ export default function RescuerMobilePeekSheet({
                     border: '1px solid rgba(226, 75, 74, 0.3)',
                     borderLeft: '3px solid #E24B4A',
                     borderRadius: 10,
-                    padding: '10px 12px',
+                    padding: 'clamp(8px, 2vw, 10px) clamp(10px, 2.5vw, 12px)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 6,
                   }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#f8fafc' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 6 }}>
+                    <div style={{ fontSize: 'clamp(11px, 2.9vw, 12.5px)', fontWeight: 700, color: '#f8fafc', lineHeight: 1.3 }}>
                       📍 {c.gps_or_landmark}
                     </div>
-                    <span style={{ fontSize: 9.5, background: 'rgba(226,75,74,0.25)', color: '#fca5a5', padding: '1px 6px', borderRadius: 4, fontWeight: 700 }}>
+                    <span style={{ fontSize: 9, background: 'rgba(226,75,74,0.25)', color: '#fca5a5', padding: '1px 6px', borderRadius: 4, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
                       {c.tier}
                     </span>
                   </div>
 
-                  <div style={{ fontSize: 10.5, color: '#94a3b8', display: 'flex', gap: 8 }}>
+                  <div style={{ fontSize: 'clamp(9.5px, 2.4vw, 10.5px)', color: '#94a3b8', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <span>👥 {c.victim_count || 1} victims</span>
                     {c.vulnerability_flags?.length > 0 && (
                       <span style={{ color: '#f59e0b' }}>
@@ -209,9 +209,10 @@ export default function RescuerMobilePeekSheet({
                         borderRadius: 6,
                         padding: '6px 4px',
                         color: 'var(--cyan)',
-                        fontSize: 10.5,
+                        fontSize: 'clamp(9.5px, 2.4vw, 11px)',
                         fontWeight: 700,
                         cursor: 'pointer',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       🏕️ Shelter ➔
@@ -225,9 +226,10 @@ export default function RescuerMobilePeekSheet({
                         borderRadius: 6,
                         padding: '6px 4px',
                         color: '#ffffff',
-                        fontSize: 10.5,
+                        fontSize: 'clamp(9.5px, 2.4vw, 11px)',
                         fontWeight: 700,
                         cursor: 'pointer',
+                        whiteSpace: 'nowrap',
                       }}
                     >
                       🚤 1-Tap Dispatch
@@ -241,9 +243,10 @@ export default function RescuerMobilePeekSheet({
                           borderRadius: 6,
                           padding: '6px 8px',
                           color: '#fda4af',
-                          fontSize: 10.5,
+                          fontSize: 'clamp(9.5px, 2.4vw, 11px)',
                           fontWeight: 700,
                           cursor: 'pointer',
+                          flexShrink: 0,
                         }}
                       >
                         🩺
@@ -263,14 +266,15 @@ export default function RescuerMobilePeekSheet({
                   background: 'rgba(0,229,255,0.1)',
                   border: '1px solid #00E5FF',
                   borderRadius: 8,
-                  padding: '9px',
+                  padding: '8px clamp(6px, 2vw, 10px)',
                   color: '#00E5FF',
-                  fontSize: 11.5,
+                  fontSize: 'clamp(10.5px, 2.6vw, 12px)',
                   fontWeight: 700,
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                📋 {t('rescuer.open_queue')} ({allCases.length} cases)
+                📋 {t('rescuer.open_queue')} ({allCases.length})
               </button>
               <button
                 onClick={onOpenDrone}
@@ -278,11 +282,12 @@ export default function RescuerMobilePeekSheet({
                   background: 'rgba(255,255,255,0.05)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: 8,
-                  padding: '9px 14px',
+                  padding: '8px clamp(8px, 2vw, 14px)',
                   color: '#f1f5f9',
-                  fontSize: 11.5,
+                  fontSize: 'clamp(10.5px, 2.6vw, 12px)',
                   fontWeight: 700,
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 🛰️ {t('rescuer.drone')}
